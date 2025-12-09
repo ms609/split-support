@@ -4,9 +4,9 @@ library("TreeTools")
 devtools::load_all("../TreeSearch")
 
 # Load configuration settings
-source("split-support/config.R")
+source("data-raw/config.R")
 
-referenceTree <- read.tree("split-support/reference.tre")
+referenceTree <- read.tree("data-raw/reference.tre")
 refSplits <- as.Splits(referenceTree)
 tips <- names(read.nexus.data(DataFile("aln0001")))
 
@@ -136,12 +136,11 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
     }
     
     ## TEMPORARY
-    if (dim(conc)[[2]] < 6) {
-      conc[, "cluster"] <- ClusteringConcordance(partitions, dataset)
-      conc <- cbind(conc[, 1:5],
-                    "clusterNorm" = ClusteringConcordance(partitions, dataset,
-                                                          normalize = TRUE)
-      )
+    if (file.info(ConcFile(aln))$mtime < "2025-12-09 15:00:00 GMT") {
+      conc[, "cluster"] <- ClusteringConcordance(partitions, dataset,
+                                                 normalize = FALSE)
+      conc <- cbind(conc[, 1:5], "clusterNorm" = ClusteringConcordance(
+        partitions, dataset, normalize = TRUE))
       write.table(conc, ConcFile(aln))
     }
     ## END TEMPORARY
@@ -149,10 +148,11 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   } else {
     conc <- cbind(
       quartet = QuartetConcordance(partitions, dataset),
-      cluster = ClusteringConcordance(partitions, dataset),
+      cluster = ClusteringConcordance(partitions, dataset, normalize = FALSE),
       phylo = PhylogeneticConcordance(partitions, dataset),
       mutual = MutualClusteringConcordance(partitions, dataset),
-      shared = SharedPhylogeneticConcordance(partitions, dataset)
+      shared = SharedPhylogeneticConcordance(partitions, dataset),
+      clusterNorm = ClusteringConcordance(partitions, dataset, normalize = TRUE)
     )
     write.table(conc, ConcFile(aln))
   }
