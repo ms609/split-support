@@ -176,6 +176,10 @@ common <- rowSums(is.na(concord)) == 0 &
 model <- glm(partCorrect ~ postProb + concord + bremer + tntStat + iqStat,
              family = "binomial")
 
+# How well does a measure predict whether a split is in the true tree?
+# We set `cf` to include only splits for which data is available under
+# both `var` and `cf`, to allow a straight comparison.
+# We also report the R² and AIC of a binomial regression with split T/F.
 Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
   entries <- !is.na(var) & !is.na(cf)
   outcomes <- partCorrect[entries]
@@ -184,13 +188,17 @@ Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
     breaks <- quantile(var, seq(0, 1, length.out = breaks))
   }
   bins <- cut(var, breaks = unique(breaks))
-  plot(table(bins, outcomes),
-       main = as.character(match.call()[-1]),
-       col = c("FALSE" = 2, "TRUE" = 3),
-       xlab = "",
-       ylab = ""
-       )
-  axis(1, signif(breaks), at = seq_along(breaks) / breaks)
+  plot(
+    table(bins, outcomes),
+    main = as.character(match.call()[-1]),
+    col = c("FALSE" = 2, "TRUE" = 3),
+    xlab = "",
+    ylab = "",
+    axes = FALSE
+  )
+  axis(1, signif(breaks), at = seq_along(breaks) / breaks, las = 2)
+  
+  # Predict whether a split is 'TRUE' using binomial regression
   m <- glm(outcomes ~ var, family = "binomial")
   smry <- summary(m)
   legend("bottomright", bty = "n",
