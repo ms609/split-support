@@ -34,11 +34,11 @@ iqExec <- "C:/Programs/Phylogeny/iqtree-2.2.0-Windows/bin/iqtree2.exe"
 hpcServer <- "pjjg18@hamilton8.dur.ac.uk"
 
 ### Location of output files ###
-iqDir <- "split-support/iqtree/"
-mbDir <- "split-support/MrBayes/"
-tntDir <- "split-support/TNT/"
-alnDir <- "split-support/alignments/"
-concDir <- "split-support/concordance/"
+iqDir <- "data-raw/iqtree/"
+mbDir <- "data-raw/MrBayes/"
+tntDir <- "data-raw/TNT/"
+alnDir <- "data-raw/alignments/"
+concDir <- "data-raw/concordance/"
 
 # Set up directory structure
 CreateDir <- function(dir) {
@@ -48,25 +48,25 @@ CreateDir <- function(dir) {
 # Patterns to use when creating files
 CreateDir(concDir)
 ConcFile <- function(aln) {
-  paste0(concDir, "/", aln, ".txt")
+  file.path(concDir, paste0(aln, ".txt"))
 }
 
 CreateDir(alnDir)
 DataFile <- function(aln, ext = ".nex") {
-  paste0(alnDir, "/", aln, ext)
+  file.path(alnDir, paste0(aln, ext))
 }
 
 CreateDir(iqDir)
 IQFile <- function(aln, suffix = "") {
-  paste0(iqDir, "/", aln, ".phy", suffix)
+  file.path(iqDir, paste0(aln, ".phy", suffix))
 }
 
 CreateDir(mbDir)
 MBFile <- function(aln, suffix = NULL) {
-  paste0(mbDir, "/", aln, if(!is.null(suffix)) ".", suffix)
+  file.path(mbDir, paste0(aln, if(!is.null(suffix)) ".", suffix))
 }
 
 CreateDir(tntDir)
 TNTFile <- function(aln, wt = "ew") {
-  paste0(tntDir, "/", aln, ".", wt, ".out")
+  file.path(tntDir, paste0(aln, ".", wt, ".out"))
 }
