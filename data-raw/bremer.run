@@ -1,0 +1,375 @@
+macro- ; 
+macro [ 500 ;
+macro*10 (100+(5*(ntax+1)));
+macro= ;
+
+var = 10 
+  schalgs[30] + tmpstring[30] + numreps + fillonly + maxsave + maxsub 
+  + savesub + hold + tmpbrem[ (2*(ntax+1)) ] + swaptype  + piweisoff 
+  + scorinc + numsearches + alltrees + whichtree + useconst
+  + allnods + whichnod + ratreps 
+  + driftreps + dofuse + secsearch + dorat + dodrift + domonosch 
+  + timedsch + schtime + maxsupis 
+  + beswith + beswithout + numincs + nowatsub + referscore + supis 
+  + olrseed + whichtreewas + thereftree ; 
+
+set piweisoff ( length[0] == score[0] ) ; 
+set 0 ntrees ; 
+set 1 ( ntax+2 ) ; 
+set 2 ( 2 * ntax ) ; 
+set olrseed rseed ; 
+
+/***********      SET DEFAULTS          ***********/
+set allnods 1 ;           /*  do all nodes, or single node    */
+set useconst 0 ;          /*  do constrained searches */
+set alltrees 1 ;          /*  calculate support using all trees  */
+set whichtree 0 ;         /*  if alltrees == 0, use groups from this tree */
+set maxsave 1000 ;         /*  max. number of trees to save in each round; default 1000  */
+set maxsub 30 ;           /*  save trees up to N steps longer */
+set scorinc 1 ;           /*  increase score gradually, in N steps each time  */
+set numsearches 1 ;       /*  repeat constrained searches 3 times (to use either best/avg. score) */
+set numreps 1 ;           /*  use 1 repls. for each constrained search */
+set domonosch 1 ;         /*  do a search constraining for monophyly (instead of comparing score of negatively constrained search with score of reference tree) */ 
+set schalgs $ ;           /*  default user-commands (i.e. none) */
+set dorat 0 ;             /*  do not use ratchet in constrained searches  */
+set ratreps 10 ;          /*  number of ratchet reps. in constrained searches; default 10 */
+set dodrift 1 ;           /*  use drift in constrained searches  */
+set driftreps 5 ;         /*  number of drift cycles in constrained searches; default 5 */
+set secsearch 1 ;         /*  use sectorial search in constrained searches  */
+set dofuse 1 ;            /*  fuse results of the 'numreps' replications */
+set timedsch 1 ;          /*  use timeout for constrained searches */
+set schtime 1 ;           /*  number of minutes to give up a constrained search (0 = don't give up) */
+
+/****************  SOME PRELIMINARY CALCULATIONS   ****************/
+resettime ;
+silent = buf ;
+macfloat 6 ;
+
+if ( ntrees == ( maxtrees-1 ) ) 
+  set 0 ntrees+2 ; hold '0' ;
+end
+
+loop 0 31 
+  tgroup - #1 ; 
+stop 
+
+set whichtreewas 'whichtree' ; 
+
+if ( 'alltrees' ) 
+  set referscore score[0] ; 
+  collapse temp ; 
+  collapse rule 1 ; 
+  nelsen * ;
+  loop (ntax+2) (nnodes[ntrees])
+    set tmpbrem[#1] 1000000 ;
+  stop
+else 
+  set referscore score['whichtree'] ; 
+  hold + 1 ; 
+  copytree 'whichtree' ; 
+  loop (ntax+2) (nnodes[ntrees])
+    set tmpbrem[#1] 1000000 ;
+  stop 
+end
+
+set 5 ntax ;
+set whichtree ntrees ; 
+
+tsave/ ; /* Close last open tsave file... Just in case? */
+
+tsave * refbrem.tmp.tre ; 
+save 'whichtree' ; 
+tsave/;
+
+tsave * brem.tmp.tre ;
+save 'whichtree' ;
+loop (ntax+2) nnodes['whichtree']
+  set tmpbrem[#1] 1000000 ;
+stop
+
+ttags - ;
+ttags * 'whichtree';
+
+set 0 ntrees ;
+set maxsupis score['whichtree'] ;
+keep '0' ;
+tread ( ... ) ;
+set maxsupis score['whichtree'] - 'maxsupis' ; 
+save;
+keep '0' ;
+tsave/;
+
+/*****  BEGIN CALCULATIONS WITH SUBOPTIMAL TREES   *****/
+
+set numincs 'maxsub' / 'scorinc' ;
+if ( 'numincs' < 1 )
+  set numincs 1 ;
+end
+set nowatsub 'scorinc' ;
+
+silent = buffer console;
+loop 1 'numincs'
+  subopt 'nowatsub' ;
+  hold + 'maxsave' ;
+  bbreak = fillonly tbr ;
+  set nowatsub += 'scorinc' ;
+  if ( ( 'nowatsub' + 'scorinc' ) > 'maxsub' ) 
+    set nowatsub 'maxsave' ; 
+  end
+stop
+silent - buffer console;
+  
+if ( 'alltrees' ) 
+  proc brem.tmp.tre ;
+  unique ;
+  collapse temp ;
+  set tmpbrem bremlist ;
+else 
+  set thereftree (ntrees+1) ; 
+  proc refbrem.tmp.tre ;
+  report- ;
+  set 2 0 ;
+  set 3 nnodes['thereftree'] - ( ntax+2 ) ; 
+  loop (ntax+2) nnodes['thereftree'] 
+     progress '2' '3' Checking suboptimal groups ('2' of '3'); 
+     chkbreak 1 ; 
+     set 2 ++ ; 
+     keep 'thereftree' ; 
+     proc refbrem.tmp.tre ; 
+     force + [ @'thereftree' #1 ] ; 
+     set beswith 100000000 ; 
+     set beswithout 100000000 ; 
+     
+     loop 0 ntrees 
+      set 0 score[#2] ; 
+      
+      if ( ( '0' >= 'beswith' ) && ( '0' >= 'beswithout' ) ) 
+        continue ;
+      end
+     
+     set 1 mono[#2] ; 
+
+      if ( ( '1' == 1 ) && ( '0' < 'beswith' ) ) 
+        set beswith '0' ;
+      end 
+
+      if ( ( '1' == 0 ) && ( '0' < 'beswithout' ) ) 
+        set beswithout '0' ;
+      end 
+
+    stop 
+    if ( 'tmpbrem[#1]' > ( 'beswithout' - 'beswith' ) ) 
+      set tmpbrem[#1] ( 'beswithout' - 'beswith' ) ;
+    end
+  stop 
+  progress/; 
+  report= ; 
+end 
+subopt 0 ;
+/* end of calculations for suboptimal searches    */
+
+report- ; 
+
+/*****  BEGIN CALCULATIONS USING CONSTRAINTS   *****/
+if ( 'useconst' )
+  if ( 'timedsch' )
+    macfloat 0 ; 
+    timeout 0:'schtime':0 ;
+    macfloat 6 ;
+  end
+  silent = all ;
+
+  set schalgs $xmu = noke rep'numreps'; 
+  if ( 'secsearch' ) 
+    set tmpstring $ $schalgs css rss autoc1 ; 
+  else 
+    set tmpstring $ $schalgs nocss norss noaut ;
+  end 
+  set schalgs $ $tmpstring ; 
+  if ( 'dorat' ) 
+    set tmpstring $ $schalgs rat'ratreps';
+  else 
+    set tmpstring $ $schalgs norat;
+  end 
+  set schalgs $ $tmpstring ; 
+  if ( 'dodrift' ) 
+    set tmpstring $ $schalgs drif'driftreps'; 
+  else 
+    set tmpstring $ $schalgs nodri;
+  end 
+  set schalgs $ $tmpstring ; 
+  if ( 'dofuse' ) 
+    set tmpstring $ $schalgs fuse5;
+  else 
+    set tmpstring $ $schalgs nofu ; 
+  end 
+  set schalgs $ $tmpstring ; 
+
+  keep 0 ;
+  proc refbrem.tmp.tre ;
+  set 0 nnodes[0 ] ;
+  set 1 0 ;
+  set 2 0 ;
+
+  loop (ntax+2 ) '0'
+    if ( ( 'tmpbrem[#1]' < 'maxsupis' ) && ( 'tmpbrem[#1]' > 'maxsub' ) )
+      continue ;
+    end 
+    set 1 += 'numsearches' ; 
+  stop
+    
+  loop (ntax+2 ) '0'
+    if ( ( 'tmpbrem[#1]' < 'maxsupis' ) && ( 'tmpbrem[#1]' > 'maxsub' ) ) 
+      continue ;
+    end 
+    
+    set beswith 10000000 ; 
+    set beswithout 10000000 ; 
+    
+    if ( !'domonosch' ) 
+      set beswith 'referscore' ; 
+    end
+    
+    loop 1 'numsearches'
+      set 2 ++ ; 
+      keep 0 ;
+      silent = buf;
+      proc refbrem.tmp.tre ;
+      force - [ @0 #1 ] ; 
+      constrain = ;
+      silent - buf;
+      progress '2' '1' Constrained search '2' of '1'... ; 
+      chkbreak 1 ; 
+      rseed * ;
+      $schalgs ;    
+      set 0 score[0] ;
+      if ( 'beswithout' > '0' )
+        set beswithout '0' ;
+      end
+      if ( 'domonosch' ) 
+        keep 0 ;
+        silent = buf;
+        proc refbrem.tmp.tre ; 
+        force + [ @0 #1 ] ; 
+        constrain = ;
+        silent - buf;
+        $schalgs ;
+        set 0 score[0] ; 
+        if ( 'beswith' > '0' )
+          set beswith '0' ; 
+        end
+      end
+    stop
+    
+    set supis ( 'beswithout' - 'beswith' ) ;
+    if ( 'supis' < 'tmpbrem[#1]' )
+      set tmpbrem[#1] 'supis' ;
+    end
+  stop
+  
+  progress/; 
+  constrain =;
+end
+
+
+/********  WRITE LABELS TO TARGET TREE  **************/
+keep 0 ;
+proc brem.tmp.tre ;
+if ( 'piweisoff')
+  macfloat 0 ;
+else
+  macfloat 2 ;
+end
+
+loop (ntax+2) nnodes[0]
+  ttags +#1;
+  if ( 'tmpbrem[#1]' >= 'maxsupis' ) 
+    ttags +#1 ???;
+    continue ;
+  end 
+  if ( 'tmpbrem[#1]' < 0 ) 
+    ttags +#1 ['tmpbrem[#1]']; 
+  else 
+    ttags +#1 'tmpbrem[#1]';
+  end
+stop
+
+constrain - ;
+force - ; 
+macfloat 6 ; 
+rseed 'olrseed' ; 
+
+
+/*****  RE-READ ORIGINAL SET OF TREES  *************/
+keep 0 ;
+proc brem.tmp.tre ;
+set 0 ( ntrees - 1 ) ;
+tc 1.'0' ;
+
+
+/**********  SHOW SETTINGS AND TREE (SAVING IT, IF SO REQUESTED) *******/
+macfloat 0 ;
+silent - all ;
+lquote [ ;
+quote &10&10SETTINGS FOR CALCULATION OF BREMER SUPPORTS: ; 
+silent = all ; 
+if ( !'piweisoff' ) 
+  macfloat 3 ;
+end 
+silent - all ; 
+quote &32  Searching suboptimal trees, with score up to 'maxsub' worse than ; 
+silent = all ;
+macfloat 0 ;
+silent - all ; 
+quote &32     best (in 'numincs' searches, each 'scorinc' worse than previous); 
+
+
+quote &32  Searching with constraints, 'numsearches' times (each with ; 
+lquote = ; 
+quote &32     'numreps' replications; 
+if ( 'secsearch' ) 
+  quote , sectorial search; else quote , no sectorial search;
+end 
+if ( 'dorat' ) 
+  quote , 'ratreps' ratchet iterations; else quote , no ratchet;
+end 
+lquote - ; quote ,&10; lquote= ; 
+if ( 'dodrift' ) 
+  quote &32     'driftreps' drifting cycles; else quote &32     no drifting;
+end 
+if ( 'dofuse' ) 
+  quote , fusing results from the 'numreps' replications) ; 
+else 
+  quote , no fusing); 
+end 
+lquote - ; 
+
+
+lquote - ; 
+quote &10 ; 
+if ( 'numsearches' > 1 ) 
+  quote &32  Using the best scores (with and without constraints) ; 
+end 
+
+if ( 'useconst' )
+  if ( 'domonosch' ) 
+    quote &32  Best score with a group calculated constraining group for monophyly ; 
+  else
+    quote &32  Best score with a group taken from reference tree(s) ; 
+  end 
+end
+
+if ( 'alltrees' ) 
+  quote &32  Calculating supports on consensus of shortest trees in memory ; 
+else 
+  quote &32  Calculating supports for groups of tree 'whichtreewas' ; 
+end
+
+
+lquote - ; lquote [ ; 
+set 0 time ; 
+quote TOTAL TIME USED: '0' secs.; 
+quote &10 ; 
+lquote ] ;
+
+proc/ ;
