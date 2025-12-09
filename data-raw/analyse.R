@@ -9,6 +9,7 @@ source("data-raw/config.R")
 referenceTree <- read.tree("data-raw/reference.tre")
 refSplits <- as.Splits(referenceTree)
 tips <- names(read.nexus.data(DataFile("aln0001")))
+nTip <- length(tips)
 
 # Eugh, I don't like growing vectors like this!
 partCorrect <- logical(0)
@@ -20,6 +21,7 @@ tntStat <- matrix(0, 0, length(tntStats), dimnames = list(NULL, tntStats))
 ufb <- numeric(0)
 iqStats <- c("alrt", "lbp", "abayes", "ufb") # .iqtree output file gives order
 iqStat <- matrix(0, 0, length(iqStats), dimnames = list(NULL, iqStats))
+splitH <- numeric(0)
 
 for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   aln <- alns[[i]]
@@ -157,9 +159,22 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
     write.table(conc, ConcFile(aln))
   }
   
+  if (file.exists(EntropyFile(aln))) {
+    h <- as.matrix(read.table(EntropyFile(aln)))
+    if (dim(h)[[1]] != dim(tntTags)[[1]]) {
+      file.remove(EntropyFile(aln))
+      stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
+    }
+  } else {
+    nLeft <- TipsInSplits(partitions, keep = TRUE)
+    h <- apply(cbind(nLeft, nTip - nLeft), 1, TreeDist::Ntropy)
+    write.table(h, EntropyFile(aln))
+  }
+  
   partCorrect <- c(partCorrect, partitions %in% refSplits)
   postProb <- c(postProb, pp, rep(0, sum(tntOnly, iqOnly, ufbOnly)))
   concord <- rbind(concord, conc)
+  splitH <- c(splitH, h)
   bremer <- c(bremer, brem)
   tntStat <- rbind(tntStat, tntTags)
   iqStat <- rbind(iqStat, iqTags)
@@ -193,28 +208,28 @@ Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
     main = as.character(match.call()[-1]),
     col = c("FALSE" = 2, "TRUE" = 3),
     xlab = "",
-    ylab = "",
-    axes = FALSE
+    ylab = ""
   )
   axis(1, signif(breaks), at = seq_along(breaks) / breaks, las = 2)
   
   # Predict whether a split is 'TRUE' using binomial regression
   m <- glm(outcomes ~ var, family = "binomial")
   smry <- summary(m)
-  legend("bottomright", bty = "n",
-         text.font = 2,
+  legend("left",
+         text.font = 1,
          legend = c(paste("AIC:", round(smry$aic)),
                     paste("r2", signif(1 - (smry$deviance / smry$null.deviance), 3))))
 }
 
 par(mfrow = c(4, 2), mar = rep(2, 4))
 Histy(postProb, cf = concord[, "quartet"])
+Histy(concord[, "cluster"], cf = postProb)
+Histy(concord[, "clusterNorm"], cf = postProb)
 Histy(concord[, "quartet"], cf = postProb)
 Histy(concord[, "mutual"], cf = postProb)
 Histy(concord[, "shared"], cf = postProb)
 Histy(concord[, "phylo"], cf = postProb)
-Histy(concord[, "cluster"], cf = postProb)
-Histy(concord[, "clusterNorm"], cf = postProb)
+Histy(splitH, cf = postProb)
 
 par(mfrow = c(4, 3), mar = rep(2, 4))
 Histy(bremer)

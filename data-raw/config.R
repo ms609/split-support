@@ -39,6 +39,7 @@ mbDir <- "data-raw/MrBayes/"
 tntDir <- "data-raw/TNT/"
 alnDir <- "data-raw/alignments/"
 concDir <- "data-raw/concordance/"
+hDir <- "data-raw/entropy/"
 
 # Set up directory structure
 CreateDir <- function(dir) {
@@ -49,6 +50,12 @@ CreateDir <- function(dir) {
 CreateDir(concDir)
 ConcFile <- function(aln) {
   file.path(concDir, paste0(aln, ".txt"))
+}
+
+# Patterns to use when creating files
+CreateDir(hDir)
+EntropyFile <- function(aln) {
+  file.path(hDir, paste0(aln, ".txt"))
 }
 
 CreateDir(alnDir)
