@@ -9,7 +9,6 @@ source("data-raw/config.R")
 referenceTree <- read.tree("data-raw/reference.tre")
 refSplits <- as.Splits(referenceTree)
 tips <- names(read.nexus.data(DataFile("aln0001")))
-nTip <- length(tips)
 
 # Eugh, I don't like growing vectors like this!
 partCorrect <- logical(0)

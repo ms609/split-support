@@ -1,7 +1,7 @@
-source("split-support/config.R")
+source("data-raw/config.R")
 
-if(!dir.exists("split-support/alignments")) {
-  source("split-support/simulate.R")
+if(!dir.exists("data-raw/alignments")) {
+  source("data-raw/simulate.R")
 }
 
 on.exit(unlink("*.tmp.tre"))
@@ -11,7 +11,7 @@ for (aln in alns) {
   } else {
     system2(
       tntExec, 
-      paste0("run split-support/tnt-ew.run", " ",
+      paste0("run data-raw/tnt-ew.run", " ",
              DataFile(aln), " ",
              TNTFile(aln, "ew"), " ;")
     )

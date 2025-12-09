@@ -1,11 +1,11 @@
-source("split-support/config.R")
+source("data-raw/config.R")
 
-if(!dir.exists("split-support/alignments")) {
-  source("split-support/simulate.R")
+if(!dir.exists("data-raw/alignments")) {
+  source("data-raw/simulate.R")
 }
 
 
-template <- readLines("split-support/mb.nex")
+template <- readLines("data-raw/mb.nex")
 
 for (aln in alns) {
   

@@ -25,7 +25,7 @@ for (i in formatC(1:1000, width = 4, flag = "0")) {
   )
 }
 
-# TODO: Simulate data under a non-JC model so that MCMC analysis uses a
-# mis-specified model.
+# TODO: Consider simulating data under a non-JC model so that MCMC analysis
+# uses a mis-specified model.
 
 # See: http://www.iqtree.org/doc/AliSim

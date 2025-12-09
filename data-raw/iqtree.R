@@ -1,7 +1,7 @@
-source("split-support/config.R")
+source("data-raw/config.R")
 
-if(!dir.exists("split-support/alignments")) {
-  source("split-support/simulate.R")
+if(!dir.exists("data-raw/alignments")) {
+  source("data-raw/simulate.R")
 }
 
 for (aln in alns) {
@@ -34,7 +34,7 @@ for (aln in alns) {
              " -lbp 1000 ", # Fast local bootstrap probability
              " -alrt 1000 ", # Approximate likelihood ratio test
              " -abayes ", # Approximate Bayes test
-             " -quiet ", # Approximate Bayes test
+             " -quiet ",
              " --redo-tree ", # Overwrite previous run results
              ""
              )
