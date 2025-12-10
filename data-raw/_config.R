@@ -70,7 +70,7 @@ IQFile <- function(sim, id, suffix = "") {
 }
 
 CreateDir(mbDir)
-MBFile <- function(sim, id, suffix = NULL) {
+MBFile <- function(sim, id = "", suffix = NULL) {
   file.path(mbDir, paste0(sim, id, if(!is.null(suffix)) ".", suffix))
 }
 
