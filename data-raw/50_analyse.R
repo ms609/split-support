@@ -6,9 +6,13 @@ devtools::load_all("../TreeSearch")
 # Load configuration settings
 source("data-raw/config.R")
 
-referenceTree <- read.tree("data-raw/reference.tre")
+# Set simulation identifier here
+sim <- "gam"
+
+referenceTree <- file.path("data-raw", sprintf("reference-%s.tre", sim)) |>
+  read.tree()
 refSplits <- as.Splits(referenceTree)
-tips <- names(read.nexus.data(DataFile("aln0001")))
+tips <- names(read.nexus.data(DataFile(sim, "0001")))
 
 # Eugh, I don't like growing vectors like this!
 partCorrect <- logical(0)
@@ -23,10 +27,10 @@ iqStat <- matrix(0, 0, length(iqStats), dimnames = list(NULL, iqStats))
 splitH <- numeric(0)
 
 for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
-  aln <- alns[[i]]
+  aln <- alnIDs[[i]]
   
   # Load MrBayes partitions
-  parts <- read.table(MBFile(aln, "parts"), skip = 2 + nTip)
+  parts <- read.table(MBFile(sim, aln, "parts"), skip = 2 + nTip)
   partitions <- setNames(as.Splits(parts[, 2], tips), paste0("mb", parts[, 1]))
   
   # Load TNT partitions

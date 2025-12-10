@@ -8,7 +8,7 @@ nCats <- 6
 
 # Number of alignments to analyse
 nAln <- 1000
-alns <- paste0("aln", formatC(seq_len(nAln), width = 4, flag = 0))
+alnIDs <- formatC(seq_len(nAln), width = 4, flag = 0)
 
 ### Location of executables ###
 
@@ -49,32 +49,32 @@ CreateDir <- function(dir) {
 
 # Patterns to use when creating files
 CreateDir(concDir)
-ConcFile <- function(aln) {
-  file.path(concDir, paste0(aln, ".txt"))
+ConcFile <- function(sim, id) {
+  file.path(concDir, paste0(sim, id, ".txt"))
 }
 
 # Patterns to use when creating files
 CreateDir(hDir)
-EntropyFile <- function(aln) {
-  file.path(hDir, paste0(aln, ".txt"))
+EntropyFile <- function(sim, id) {
+  file.path(hDir, paste0(sim, id, ".txt"))
 }
 
 CreateDir(alnDir)
-DataFile <- function(aln, ext = ".nex") {
-  file.path(alnDir, paste0(aln, ext))
+DataFile <- function(sim, id, ext = ".nex") {
+  file.path(alnDir, paste0(sim, id, ext))
 }
 
 CreateDir(iqDir)
-IQFile <- function(aln, suffix = "") {
-  file.path(iqDir, paste0(aln, ".phy", suffix))
+IQFile <- function(sim, id, suffix = "") {
+  file.path(iqDir, paste0(sim, id, ".phy", suffix))
 }
 
 CreateDir(mbDir)
-MBFile <- function(aln, suffix = NULL) {
-  file.path(mbDir, paste0(aln, if(!is.null(suffix)) ".", suffix))
+MBFile <- function(sim, id, suffix = NULL) {
+  file.path(mbDir, paste0(sim, id, if(!is.null(suffix)) ".", suffix))
 }
 
 CreateDir(tntDir)
-TNTFile <- function(aln, wt = "ew") {
-  file.path(tntDir, paste0(aln, ".", wt, ".out"))
+TNTFile <- function(sim, id, wt = "ew") {
+  file.path(tntDir, paste0(sim, id, ".", wt, ".out"))
 }

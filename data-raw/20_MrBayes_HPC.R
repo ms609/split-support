@@ -1,12 +1,12 @@
-source("split-support/config.R")
+source("data-raw/_config.R")
 
-if(!dir.exists("split-support/alignments")) {
-  source("split-support/simulate.R")
+if(!dir.exists("data-raw/alignments")) {
+  source("data-raw/simulate.R")
 }
 
 ssh::ssh_connect(hpcServer) # Will prompt for authentication
 
-template <- readLines("split-support/mb.nex")
+template <- readLines("data-raw/mb.nex")
 
 for (aln in alns) {
   
@@ -20,7 +20,7 @@ for (aln in alns) {
       MBFile(aln)
     )
     
-    writeLines(c(readLines("split-support/slurm.sh"),
+    writeLines(c(readLines("data-raw/slurm.sh"),
                  paste("mb", MBFile(aln))),
                MBFile(aln.sh))
     

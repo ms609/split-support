@@ -10,7 +10,7 @@ treeLength <- sum(referenceTree$edge.length)
 rate <- 12 / treeLength
 print(signif(rate)) # mb.nex: prset brlenspr=unconstrained:uniform(0,<RATE>);
 if (interactive()) plot(referenceTree)
-ape::write.tree(referenceTree, file = "data-raw/reference.tre")
+ape::write.tree(referenceTree, file = "data-raw/reference-aln.tre")
 
 # Simulate J-C alignments
 for (i in formatC(1:1000, width = 4, flag = "0")) {
@@ -36,7 +36,7 @@ treeLength <- sum(referenceTree$edge.length)
 rate <- 12 / treeLength
 print(signif(rate)) # mb.nex: prset brlenspr=unconstrained:uniform(0,<RATE>);
 if (interactive()) plot(referenceTree)
-ape::write.tree(referenceTree, file = "data-raw/reference-gamma.tre")
+ape::write.tree(referenceTree, file = "data-raw/reference-gam.tre")
 
 if (nChar %% nCats != 0) {
   warning("Remainder alert: ",
