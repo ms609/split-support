@@ -14,7 +14,7 @@ remoteUser <- ssh::ssh_exec_internal(session, "echo $USER")$stdout |>
 remoteWD <- file.path("", "nobackup", remoteUser, "spl-sup")
 template <- readLines(file.path("data-raw", sprintf("mb-%s.nex", sim)))
 
-for (aln in alnIDs[1:50]) {
+for (aln in alnIDs) {
   
   if (file.exists(MBFile(sim, aln, "tstat"))) {
     message("Tree probabilities found for alignment ", aln)
