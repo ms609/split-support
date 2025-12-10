@@ -23,9 +23,7 @@ for (aln in alnIDs) {
     system2(mbExec, MBFile(sim, aln))
     
     outFiles <- list.files(path = mbDir, pattern = aln, full.names = TRUE)
-    
     unlink(outFiles[-grep(paste0("(", paste0(keepExt, collapse = "|"), ")$"),
                           outFiles)])
-    
   }
 }

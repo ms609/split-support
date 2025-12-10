@@ -8,9 +8,13 @@ if(!dir.exists("data-raw/alignments")) {
 }
 
 session <- ssh::ssh_connect(hpcServer) # May prompt for authentication
+remoteUser <- ssh::ssh_exec_internal(session, "echo $USER")$stdout |>
+  rawToChar() |>
+  trimws()
+remoteWD <- file.path("", "nobackup", remoteUser, "spl-sup")
 template <- readLines(file.path("data-raw", sprintf("mb-%s.nex", sim)))
 
-for (aln in alnIDs) {
+for (aln in alnIDs[1:50]) {
   
   if (file.exists(MBFile(sim, aln, "tstat"))) {
     message("Tree probabilities found for alignment ", aln)
@@ -22,29 +26,22 @@ for (aln in alnIDs) {
       MBFile(sim, aln)
     )
     
-    writeLines(c(readLines("data-raw/slurm.sh"),
-                 paste("mb", MBFile(sim, aln))),
+    remoteFile <- file.path(remoteWD, basename(MBFile(sim, aln)))
+    writeLines(c(readLines("data-raw/slurm.sh"), paste("mb", remoteFile)),
                MBFile(aln.sh))
     
-    ssh::scp_upload(session, MBFile(sim, aln))
+    ssh::ssh_exec_wait(session, paste("mkdir", "-p", remoteWD))
+    ssh::scp_upload(session, MBFile(sim, aln), to = remoteWD)
     ssh::scp_upload(session, MBFile(aln.sh))
     
-    print(ssh::ssh_exec_wait(session, paste0("tr -d '\015' <", aln.sh, " >", aln.sh, ".sh")))
+    ssh::ssh_exec_wait(session,
+                       paste0("tr -d '\015' <", aln.sh, " >", aln.sh, ".sh"))
     print(ssh::ssh_exec_wait(session, paste0("sbatch ", aln.sh, ".sh")))
-    
-    # Download the file back and verify it is the same
-    ssh::scp_download(session, "slurm-1536761.out", to = tempdir())
-    if (tools::md5sum(file_path) != 
-        tools::md5sum(file.path(tempdir(), "slurm-1536761.out"))) {
-      warning("MD5 mismatch: ", aln)
-    }
     
     # Remove unneeded results files
     outFiles <- list.files(path = mbDir, pattern = aln, full.names = TRUE)
-    
     unlink(outFiles[-grep(paste0("(", paste0(keepExt, collapse = "|"), ")$"),
                           outFiles)])
-    
   }
 }
 
