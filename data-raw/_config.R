@@ -78,3 +78,12 @@ CreateDir(tntDir)
 TNTFile <- function(sim, id, wt = "ew") {
   file.path(tntDir, paste0(sim, id, ".", wt, ".out"))
 }
+
+# MrBayes output files to retain
+keepExt <- c(
+  "con\\.tre", # Consensus tree - why not
+  "parts", "tstat", # Partitions and probabilities
+  # "trprobs" # Sampled trees and probabilities
+  # "mcmc" # Standard deviations of splits - see `tstat`
+  "pstat" # Convergence diagnostics
+)
