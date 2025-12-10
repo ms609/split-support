@@ -4,7 +4,7 @@ library("TreeTools")
 devtools::load_all("../TreeSearch")
 
 # Load configuration settings
-source("data-raw/config.R")
+source("data-raw/_config.R")
 
 # Set simulation identifier here
 sim <- "gam"

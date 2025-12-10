@@ -1,7 +1,7 @@
-source("data-raw/config.R")
+source("data-raw/_config.R")
 
 if(!dir.exists("data-raw/alignments")) {
-  source("data-raw/simulate.R")
+  source("data-raw/10_simulate.R")
 }
 
 on.exit(unlink("*.tmp.tre"))
