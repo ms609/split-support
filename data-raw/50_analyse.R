@@ -35,6 +35,10 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   
   # Load TNT partitions
   tntFile <- TNTFile(sim, aln, "ew")
+  if (!file.exists(tntFile)) {
+    warning("No TNT results available for ", aln, ".")
+    next;
+  }
   tntTree <- suppressMessages(ReadTntTree(tntFile, tipLabels = tips))
   if (!inherits(tntTree, "multiPhylo")) {
     warning("Only one tree found in file ", aln, "; missing TNT output.")
