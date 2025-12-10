@@ -4,6 +4,7 @@
 nTip <- 48
 tips <- paste0("t", seq_len(nTip))
 nChar <- nTip * 2
+nCats <- 6
 
 # Number of alignments to analyse
 nAln <- 1000
