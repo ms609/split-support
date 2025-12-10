@@ -181,7 +181,7 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   partCorrect <- c(partCorrect, partitions %in% refSplits)
   postProb <- c(postProb, pp, rep(0, sum(tntOnly, iqOnly, ufbOnly)))
   concord <- rbind(concord, conc)
-  splitH <- c(splitH, h)
+  splitH <- rbind(splitH, h)
   bremer <- c(bremer, brem)
   tntStat <- rbind(tntStat, tntTags)
   iqStat <- rbind(iqStat, iqTags)
