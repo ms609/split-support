@@ -1,4 +1,4 @@
-source("data-raw/config.R")
+source("data-raw/_config.R")
 
 # Simulate all characters with identical rates
 # Create reference tree
