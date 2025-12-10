@@ -26,7 +26,8 @@ iqStats <- c("alrt", "lbp", "abayes", "ufb") # .iqtree output file gives order
 iqStat <- matrix(0, 0, length(iqStats), dimnames = list(NULL, iqStats))
 splitH <- numeric(0)
 
-for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
+for (i in cli::cli_progress_along(seq_len(2), "Analysing")) {
+#for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   aln <- alnIDs[[i]]
   
   # Load MrBayes partitions
@@ -34,7 +35,7 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   partitions <- setNames(as.Splits(parts[, 2], tips), paste0("mb", parts[, 1]))
   
   # Load TNT partitions
-  tntFile <- TNTFile(aln, "ew")
+  tntFile <- TNTFile(sim, aln, "ew")
   tntTree <- suppressMessages(ReadTntTree(tntFile, tipLabels = tips))
   if (!inherits(tntTree, "multiPhylo")) {
     warning("Only one tree found in file ", aln, "; missing TNT output.")
@@ -59,7 +60,7 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   }
   
   # Load IQ-tree partitions
-  iqTree <- read.tree(IQFile(aln, ".treefile"))
+  iqTree <- read.tree(IQFile(sim, aln, ".treefile"))
   iqParts <- as.Splits(iqTree)
   iqOnly <- !iqParts %in% partitions
   if (any(iqOnly)) {
@@ -68,7 +69,7 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
       setNames(iqParts[[iqOnly]], paste0("iq", seq_len(sum(iqOnly))))
     )
   }
-  ufbLines <- readLines(IQFile(aln, ".splits.nex"))[-seq_len(nTip + 13)]
+  ufbLines <- readLines(IQFile(sim, aln, ".splits.nex"))[-seq_len(nTip + 13)]
   ufbLines <- ufbLines[seq_len(which.max(ufbLines == ";") - 1)]
   ufbLines <- do.call(rbind, strsplit(trimws(ufbLines), "\t"))
   ufbParts <- as.Splits(t(vapply(
@@ -123,31 +124,31 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   
   
   # Populate posterior probabilities
-  pp <- read.table(MBFile(aln, "tstat"), skip = 1,
+  pp <- read.table(MBFile(sim, aln, "tstat"), skip = 1,
                    header = TRUE, comment.char = "")
   pp <- setNames(pp[, "Probability..s."], pp[, "ID"])
   
   
   # Calculate concordances
-  dataset <- MatrixToPhyDat(matrix(unlist(read.nexus.data(DataFile(aln))), 
+  dataset <- MatrixToPhyDat(matrix(unlist(read.nexus.data(DataFile(sim, aln))), 
                                    nrow = nTip, byrow = TRUE,
                                    dimnames = list(tips, NULL)))
   
-  if (file.exists(ConcFile(aln))) {
-    conc <- as.matrix(read.table(ConcFile(aln)))
+  if (file.exists(ConcFile(sim, aln))) {
+    conc <- as.matrix(read.table(ConcFile(sim, aln)))
     if (dim(conc)[[1]] != dim(tntTags)[[1]]) {
-      file.remove(ConcFile(aln))
+      file.remove(ConcFile(sim, aln))
       stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
     }
     
     ## TEMPORARY
-    if (file.info(ConcFile(aln))$mtime < "2025-12-09 15:00:00 GMT") {
-      conc[, "cluster"] <- ClusteringConcordance(partitions, dataset,
-                                                 normalize = FALSE)
-      conc <- cbind(conc[, 1:5], "clusterNorm" = ClusteringConcordance(
-        partitions, dataset, normalize = TRUE))
-      write.table(conc, ConcFile(aln))
-    }
+    # if (file.info(ConcFile(sim, aln))$mtime < "2025-12-09 15:00:00 GMT") {
+    #   conc[, "cluster"] <- ClusteringConcordance(partitions, dataset,
+    #                                              normalize = FALSE)
+    #   conc <- cbind(conc[, 1:5], "clusterNorm" = ClusteringConcordance(
+    #     partitions, dataset, normalize = TRUE))
+    #   write.table(conc, ConcFile(sim, aln))
+    # }
     ## END TEMPORARY
     
   } else {
