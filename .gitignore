@@ -45,5 +45,13 @@ docs/
 # translation temp files
 po/*~
 
+# Temporary analysis files
+brem.tmp.tre
+refbrem.tmp.tre
+**.phy.*.gz
+**.phy.mldist
+**.phy.log
+**.phy.bionj
+
 # RStudio Connect folder
 rsconnect/
