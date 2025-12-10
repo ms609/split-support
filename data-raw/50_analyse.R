@@ -232,6 +232,8 @@ Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
                     paste("r2", signif(1 - (smry$deviance / smry$null.deviance), 3))))
 }
 
+allCF <- rowSums(concord) + postProb + rowSums(tntStat) + rowSums(iqStat) + bremer
+
 par(mfrow = c(4, 2), mar = rep(2, 4))
 Histy(postProb, cf = concord[, "quartet"])
 Histy(concord[, "cluster"], cf = postProb)
@@ -242,25 +244,35 @@ Histy(concord[, "shared"], cf = postProb)
 Histy(concord[, "phylo"], cf = postProb)
 Histy(splitH, cf = postProb)
 
-par(mfrow = c(4, 3), mar = rep(2, 4))
-Histy(bremer)
+par(mfrow = c(4, 2), mar = rep(2, 4))
+Histy(bremer, cf = concord[, "quartet"])
+Histy(concord[, "cluster"], cf = bremer)
+Histy(concord[, "clusterNorm"], cf = bremer)
 Histy(concord[, "quartet"], cf = bremer)
 Histy(concord[, "mutual"], cf = bremer)
 Histy(concord[, "shared"], cf = bremer)
 Histy(concord[, "phylo"], cf = bremer)
-Histy(concord[, "cluster"], cf = bremer)
-Histy(concord[, "clusterNorm"], cf = bremer)
 
-Histy(tntStat[, "symFq"])
-Histy(tntStat[, "symGC"])
-Histy(tntStat[, "boot"])
-Histy(tntStat[, "jak"])
-Histy(tntStat[, "pois"])
+par(mfrow = c(6, 3), mar = rep(2, 4))
+Histy(postProb, cf = allCF)
+Histy(bremer, cf = allCF)
+Histy(tntStat[, "symFq"], cf = allCF)
+Histy(tntStat[, "symGC"], cf = allCF)
+Histy(tntStat[, "boot"], cf = allCF)
+Histy(tntStat[, "jak"], cf = allCF)
+Histy(tntStat[, "pois"], cf = allCF)
 
-Histy(iqStat[, "ufb"])
-Histy(iqStat[, "lbp"])
-Histy(iqStat[, "alrt"])
-Histy(iqStat[, "abayes"])
+Histy(iqStat[, "ufb"], cf = allCF)
+Histy(iqStat[, "lbp"], cf = allCF)
+Histy(iqStat[, "alrt"], cf = allCF)
+Histy(iqStat[, "abayes"], cf = allCF)
+
+Histy(concord[, "cluster"], cf = allCF)
+Histy(concord[, "clusterNorm"], cf = allCF)
+Histy(concord[, "quartet"], cf = allCF)
+Histy(concord[, "mutual"], cf = allCF)
+Histy(concord[, "shared"], cf = allCF)
+Histy(concord[, "phylo"], cf = allCF)
 
 Peek <- function(var) {
   m <- glm(partCorrect ~ var, family = "binomial")
