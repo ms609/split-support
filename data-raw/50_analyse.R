@@ -26,8 +26,7 @@ iqStats <- c("alrt", "lbp", "abayes", "ufb") # .iqtree output file gives order
 iqStat <- matrix(0, 0, length(iqStats), dimnames = list(NULL, iqStats))
 splitH <- numeric(0)
 
-for (i in cli::cli_progress_along(seq_len(2), "Analysing")) {
-#for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
+for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   aln <- alnIDs[[i]]
   
   # Load MrBayes partitions
@@ -134,20 +133,21 @@ for (i in cli::cli_progress_along(seq_len(2), "Analysing")) {
                                    nrow = nTip, byrow = TRUE,
                                    dimnames = list(tips, NULL)))
   
-  if (file.exists(ConcFile(sim, aln))) {
-    conc <- as.matrix(read.table(ConcFile(sim, aln)))
+  concCache <- ConcFile(sim, aln)
+  if (file.exists(concCache)) {
+    conc <- as.matrix(read.table(concCache))
     if (dim(conc)[[1]] != dim(tntTags)[[1]]) {
       file.remove(ConcFile(sim, aln))
       stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
     }
     
     ## TEMPORARY
-    # if (file.info(ConcFile(sim, aln))$mtime < "2025-12-09 15:00:00 GMT") {
+    # if (file.info(concCache)$mtime < "2025-12-09 15:00:00 GMT") {
     #   conc[, "cluster"] <- ClusteringConcordance(partitions, dataset,
     #                                              normalize = FALSE)
     #   conc <- cbind(conc[, 1:5], "clusterNorm" = ClusteringConcordance(
     #     partitions, dataset, normalize = TRUE))
-    #   write.table(conc, ConcFile(sim, aln))
+    #   write.table(conc, concCache)
     # }
     ## END TEMPORARY
     
@@ -160,19 +160,20 @@ for (i in cli::cli_progress_along(seq_len(2), "Analysing")) {
       shared = SharedPhylogeneticConcordance(partitions, dataset),
       clusterNorm = ClusteringConcordance(partitions, dataset, normalize = TRUE)
     )
-    write.table(conc, ConcFile(aln))
+    write.table(conc, concCache)
   }
   
-  if (file.exists(EntropyFile(aln))) {
-    h <- as.matrix(read.table(EntropyFile(aln)))
+  hCache <- EntropyFile(sim, aln)
+  if (file.exists(hCache)) {
+    h <- as.matrix(read.table(hCache))
     if (dim(h)[[1]] != dim(tntTags)[[1]]) {
-      file.remove(EntropyFile(aln))
+      file.remove(hCache)
       stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
     }
   } else {
     nLeft <- TipsInSplits(partitions, keep = TRUE)
     h <- apply(cbind(nLeft, nTip - nLeft), 1, TreeDist::Ntropy)
-    write.table(h, EntropyFile(aln))
+    write.table(h, hCache)
   }
   
   partCorrect <- c(partCorrect, partitions %in% refSplits)
