@@ -171,8 +171,10 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
       stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
     }
   } else {
-    nLeft <- TipsInSplits(partitions, keep = TRUE)
-    h <- apply(cbind(nLeft, nTip - nLeft), 1, TreeDist::Ntropy)
+    h <- cbind(
+      clustering = TreeDist::ClusteringEntropy(partitions, sum = FALSE),
+      splitwise = TreeDist::SplitwiseInfo(partitions, sum = FALSE)
+    )
     write.table(h, hCache)
   }
   
