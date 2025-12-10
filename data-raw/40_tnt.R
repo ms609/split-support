@@ -13,7 +13,7 @@ for (aln in alnIDs) {
     message("Results found for ", aln)
   } else {
     system2(
-      tntExec, 
+      tntExec,
       paste0("run data-raw/tnt-ew.run", " ",
              DataFile(sim, aln), " ",
              TNTFile(sim, aln, "ew"), " ;")
