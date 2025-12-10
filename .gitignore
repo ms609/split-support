@@ -51,6 +51,7 @@ refbrem.tmp.tre
 **.phy.*.gz
 **.phy.mldist
 **.phy.log
+**.phy.ufboot
 **.phy.bionj
 
 # RStudio Connect folder
