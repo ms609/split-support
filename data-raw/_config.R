@@ -30,8 +30,9 @@ mbExec <- "C:/Programs/Phylogeny/MrBayes/bin/mb.3.2.7-win64.exe"
 # and unzip/install to a convenient local folder.
 
 # Command to launch IQ-tree executable
-iqExec <- "C:/Programs/Phylogeny/iqtree-2.2.0-Windows/bin/iqtree2.exe"
+iqExec <- "C:/Programs/Phylogeny/iqtree-3.0.1-Windows/bin/iqtree3.exe"
 
+# Username and server ID for HPC login
 hpcServer <- "pjjg18@hamilton8.dur.ac.uk"
 
 ### Location of output files ###

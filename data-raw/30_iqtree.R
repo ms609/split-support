@@ -1,15 +1,18 @@
+# Set simulation identifier
+sim <- "gam"
+
 source("data-raw/_config.R")
 
 if(!dir.exists("data-raw/alignments")) {
   source("data-raw/10_simulate.R")
 }
 
-for (aln in alns) {
-  if (file.exists(IQFile(aln, ".splits.nex"))) {
+for (aln in alnIDs) {
+  if (file.exists(IQFile(sim, aln, ".splits.nex"))) {
     message("Results found for ", aln)
   } else {
-    seqs <- ape::read.nexus.data(DataFile(aln))
-    phyle <- IQFile(aln)
+    seqs <- ape::read.nexus.data(DataFile(sim, aln))
+    phyle <- IQFile(sim, aln)
     on.exit(unlink(phyle))
     writeLines(c(
       paste(length(seqs), length(seqs[[1]])),
@@ -41,7 +44,7 @@ for (aln in alns) {
     )
     
     # Remove unneeded results files
-    keepExt <- c(
+    iqKeepExt <- c(
       "treefile", # Maximum likelihood tree
       #"iqtree", # Lists order of support values
       # Here: SH-aLRT support (%) / local bootstrap support (%) / 
@@ -52,7 +55,7 @@ for (aln in alns) {
     
     outFiles <- list.files(path = iqDir, pattern = aln, full.names = TRUE)
     
-    unlink(outFiles[-grep(paste0("(", paste0(keepExt, collapse = "|"), ")$"),
+    unlink(outFiles[-grep(paste0("(", paste0(iqKeepExt, collapse = "|"), ")$"),
                           outFiles)])
   }
 }
