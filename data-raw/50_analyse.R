@@ -156,13 +156,23 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
     ## END TEMPORARY
     
   } else {
+    cAll <- ClusteringConcordance(partitions, dataset, normalize = FALSE,
+                                  return = "all")
+    bestSums <- rowSums(cAll["hBest", , ])
+    .Rezero <- function(value, zero) {
+      (value - zero) / (1 - zero)
+    }
+    
     conc <- cbind(
       quartet = QuartetConcordance(partitions, dataset),
-      cluster = ClusteringConcordance(partitions, dataset, normalize = FALSE),
+      cluster = rowSums(cAll["mi", , ]) / bestSums, # = ClustConc(norm = FALSE)
       phylo = PhylogeneticConcordance(partitions, dataset),
       mutual = MutualClusteringConcordance(partitions, dataset),
       shared = SharedPhylogeneticConcordance(partitions, dataset),
-      clusterNorm = ClusteringConcordance(partitions, dataset, normalize = TRUE)
+      clusterNorm = .Rezero(
+        rowSums(cAll["mi", , ]) / bestSums,
+        rowSums(cAll["miRand", , ]) / bestSums
+      ) # = ClustConc(partitions, dataset, norm = TRUE)
     )
     write.table(conc, concCache)
   }
