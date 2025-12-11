@@ -50,8 +50,8 @@ CreateDir <- function(dir) {
 
 # Patterns to use when creating files
 CreateDir(concDir)
-ConcFile <- function(sim, id) {
-  file.path(concDir, paste0(sim, id, ".txt"))
+ConcFile <- function(sim, id, suffix = "") {
+  file.path(concDir, paste0(sim, id, suffix, ".txt"))
 }
 
 # Patterns to use when creating files
