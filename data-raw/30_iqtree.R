@@ -30,7 +30,8 @@ for (aln in alnIDs) {
              " -mset ", switch(sim, "aln" = "JC", "gam" = "JC+G6",
                                stop("unknown `sim`")),
              "  -mrate E ", # Equal rates only
-             " -nt 1", # Number of threads; -nt auto -ntmax 6 is slow
+             " -nt 1", # multi-threading does not improve performance here;
+                       # " -nt auto -ntmax 6 " slows analyses down considerably.
              " -seed 1 ", # Set random seed for reproducibility
              #" -b 1000", # Nonparametric bootstrap is slow and can't
                           # be run alongside UFB
