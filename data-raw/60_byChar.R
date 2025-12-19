@@ -51,29 +51,35 @@ summary(lm(conc ~ cat, data = concN))
 summary(lm(conc ~ log(cat), data = concN))
 
 
-concord <- vapply(cli::cli_progress_along(seq_len(nAln), "Analysing"),
-                  function(i) {
-  aln <- alnIDs[[i]]
-
-  # Calculate concordances
-  dataset <- MatrixToPhyDat(matrix(unlist(read.nexus.data(DataFile(sim, aln))),
-                                   nrow = nTip, byrow = TRUE,
-                                   dimnames = list(tips, NULL)))
-
-  concCache <- ConcFile(sim, aln, "_chr")
-  if (file.exists(concCache)) {
-    conc <- scan(concCache, quiet = TRUE)
-    if (length(conc) != nChar) {
-      file.remove(ConcFile(sim, aln))
-      stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
+concord <- vapply(
+  cli::cli_progress_along(seq_len(nAln), "Analysing"),
+  function(i) {
+    aln <- alnIDs[[i]]
+    
+    # Calculate concordances
+    dataset <- DataFile(sim, aln) |>
+      read.nexus.data() |>
+      unlist() |>
+      matrix(nrow = nTip, byrow = TRUE,
+             dimnames = list(tips, NULL)) |>
+      MatrixToPhyDat()
+    
+    concCache <- ConcFile(sim, aln, "_chr")
+    if (file.exists(concCache)) {
+      conc <- scan(concCache, quiet = TRUE)
+      if (length(conc) != nChar) {
+        file.remove(ConcFile(sim, aln))
+        stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
+      }
+    } else {
+      conc <- ClusteringConcordance(refSplits, dataset, normalize = FALSE,
+                                    return = "char")
+      write(conc, concCache)
     }
-  } else {
-    conc <- ClusteringConcordance(refSplits, dataset, normalize = FALSE,
-                                  return = "char")
-    write(conc, concCache)
-  }
-  conc
-}, double(nChar))
+    conc
+  },
+  double(nChar)
+)
 
 
 concDF <- data.frame(
