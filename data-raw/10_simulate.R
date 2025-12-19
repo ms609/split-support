@@ -19,7 +19,7 @@ for (i in formatC(1:1000, width = 4, flag = "0")) {
       phangorn::simSeq(referenceTree, nChar,
                        rootseq = rep("a", nChar),
                        rate = rate
-                       ) # Jukes-Cantor model
+      ) # Jukes-Cantor model
     )),
     file = paste0("data-raw/alignments/aln", i, ".nex"),
     interleaved = FALSE 
@@ -56,9 +56,9 @@ for (i in formatC(1:1000, width = 4, flag = "0")) {
       rate = cat * rate
     ) |>
       TreeTools::PhyDatToMatrix()
-    })) |> toupper() |>
+  })) |> toupper() |>
     ape::write.nexus.data(file = paste0("data-raw/alignments/gam", i, ".nex"),
-                     interleaved = FALSE)
+                          interleaved = FALSE)
 }
 
 
