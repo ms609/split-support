@@ -1,7 +1,6 @@
 # Load required libraries
 library("TreeTools")
-#library("TreeSearch")
-devtools::load_all("../TreeSearch")
+library("TreeSearch")
 
 # Load configuration settings
 source("data-raw/_config.R")
@@ -16,6 +15,7 @@ tips <- names(read.nexus.data(DataFile(sim, "0001")))
 
 # Eugh, I don't like growing vectors like this!
 partCorrect <- logical(0)
+partQual <- numeric(0)
 postProb <- numeric(0)
 concord <- numeric(0)
 bremer <- numeric(0)
@@ -192,7 +192,23 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
     write.table(h, hCache)
   }
   
-  partCorrect <- c(partCorrect, partitions %in% refSplits)
+  partInRef <- partitions %in% refSplits
+  partCorrect <- c(partCorrect, partInRef)
+  
+  qCache <- PartQFile(sim, aln)
+  if (file.exists(qCache)) {
+    partQ <- scan(qCache, quiet = TRUE)
+  } else {
+    partQ <- rep(1, length(partInRef))
+    partQ[!partInRef] <- vapply(
+      seq_along(partitions)[!partInRef],
+      function(i) TreeDist::MutualClusteringInfo(partitions[[i]], refSplits,
+                                                 normalize = h[, "clustering"][[i]]),
+      double(1))
+    write(partQ, qCache)
+  }
+  partQual <- c(partQual, partQ)
+  
   postProb <- c(postProb, pp, rep(0, sum(tntOnly, iqOnly, ufbOnly)))
   concord <- rbind(concord, conc)
   splitH <- rbind(splitH, h)
@@ -212,6 +228,46 @@ common <- rowSums(is.na(concord)) == 0 &
 model <- glm(partCorrect ~ postProb + concord + bremer + tntStat + iqStat,
              family = "binomial")
 
+
+dat <- data.frame(
+  occurs = partCorrect,
+  partQual,
+  postProb,
+  # tntStat,
+  iqStat,
+  # bremer,
+  concord
+) |>
+  na.omit()
+
+rocPP <- pROC::roc(response = dat$occurs, predictor = dat$postProb)
+rocQ <- pROC::roc(response = dat$occurs, predictor = dat$quartet)
+rocC <- pROC::roc(response = dat$occurs, predictor = dat$cluster)
+rocP <- pROC::roc(response = dat$occurs, predictor = dat$phylo)
+
+pROC::roc.test(rocQ, rocP, method = "delong", paired = TRUE)
+pROC::roc.test(rocQ, rocC, method = "delong", paired = TRUE)
+
+
+
+
+CIndex <- function(score, target) {
+  fit <- survcomp::concordance.index(
+    x = score,
+    surv.time  = -target,
+    surv.event = rep(1, length(target)),
+    method = "noether",
+    na.rm  = TRUE)
+  # fit$c.index is in [0,1]; 0.5 = random
+  est <- fit$c.index
+  se  <- fit$se
+  ci  <- est + c(-1, 1) * 1.96 * se
+  list(estimate = est, se = se, ci95 = ci, details = fit)
+}
+CIndex(dat$postProb, dat$partQual)$ci95
+CIndex(dat$quartet, dat$partQual)$ci95
+CIndex(dat$cluster, dat$partQual)$ci95
+CIndex(dat$phylo, dat$partQual)$ci95
 # How well does a measure predict whether a split is in the true tree?
 # We set `cf` to include only splits for which data is available under
 # both `var` and `cf`, to allow a straight comparison.

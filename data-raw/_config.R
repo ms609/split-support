@@ -54,10 +54,13 @@ ConcFile <- function(sim, id, suffix = "") {
   file.path(concDir, paste0(sim, id, suffix, ".txt"))
 }
 
-# Patterns to use when creating files
 CreateDir(hDir)
 EntropyFile <- function(sim, id) {
   file.path(hDir, paste0(sim, id, ".txt"))
+}
+
+PartQFile <- function(sim, id) {
+  file.path(hDir, paste0(sim, id, ".q.txt"))
 }
 
 CreateDir(alnDir)
