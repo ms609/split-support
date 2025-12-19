@@ -26,8 +26,10 @@ for (aln in alnIDs) {
       # http://www.iqtree.org/doc/Command-Reference
       paste0(" -s ", phyle,
              " -st DNA ", # Sequence type: DNA
-             " -mset JC ", # Model: Jukes-Cantor
-             " -mrate E ", # Equal rates only
+                        # Model: Jukes-Cantor / + 6 gamma rate cats
+             " -mset ", switch(sim, "aln" = "JC", "gam" = "JC+G6",
+                               stop("unknown `sim`")),
+             "  -mrate E ", # Equal rates only
              " -nt 1", # # Number of threads; -nt auto -ntmax 6 is slow
              " -seed 1 ", # Set random seed for reproducibility
              #" -b 1000", # Nonparametric bootstrap is slow and can't
