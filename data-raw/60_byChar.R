@@ -91,5 +91,34 @@ boxplot(concDF$conc ~ concDF$cat, notch = TRUE,
         frame.plot = FALSE, las = 3,
         ylab = "Normalized clustering concordance",
         xlab = "Generative rate")
-summary(lm(conc ~ log(cat), data = concDF))
-summary(lm(log(conc) ~ log(cat), data = concDF))
+cor.test(concDF$conc, concDF$cat, method = "kendall") # -0.6690298 
+
+
+consist <- vapply(
+  cli::cli_progress_along(seq_len(nAln), "Analysing"),
+  function(i) {
+    aln <- alnIDs[[i]]
+    
+    # Calculate concordances
+    dataset <- DataFile(sim, aln) |>
+      read.nexus.data() |>
+      unlist() |>
+      matrix(nrow = nTip, byrow = TRUE,
+             dimnames = list(tips, NULL)) |>
+      MatrixToPhyDat()
+    
+    consCache <- ConcFile(sim, aln, "_cns")
+    if (file.exists(consCache)) {
+      cons <- do.call(cbind, read.table(consCache))
+      if (nrow(cons) != nChar) {
+        # file.remove(ConcFile(sim, aln, "_cns"))
+        stop("Dimension mismatch; is consistency cache ", aln, " out of date?")
+      }
+    } else {
+      cons <- TreeSearch::Consistency(dataset, referenceTree, nRelabel = 1000)
+      write.table(cons, consCache)
+    }
+    cons
+  },
+  matrix(double(), nChar, 7)
+)
