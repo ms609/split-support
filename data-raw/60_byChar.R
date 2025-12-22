@@ -124,5 +124,11 @@ CIPlot <- function(x) {
 }
 
 
-par(mfrow = c(3, 2))
+par(mfrow = c(1, 5))
 
+CIPlot("conc")    # tau ~ -0.6530646
+CIPlot("ci")      # tau ~ -0.7734901
+CIPlot("ri")      # tau ~ -0.4762535
+CIPlot("rhi")     # tau ~ -0.5549066
+#CIPlot("rhiBar")  # tau ~ -0.5431158
+CIPlot("rci")     # tau ~ -0.5211873
