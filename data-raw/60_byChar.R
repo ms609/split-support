@@ -38,19 +38,6 @@ concordN <- vapply(cli::cli_progress_along(seq_len(nAln), "Analysing"),
   conc
 }, double(nChar))
 
-concN <- data.frame(
-  conc = as.vector(concordN),
-  cat = rep(signif(cats, 4), each = nChar / nCats)
-)
-boxplot(concN$conc ~ concN$cat, notch = TRUE,
-        frame.plot = FALSE, las = 3,
-        ylab = "Normalized clustering concordance",
-        xlab = "Generative rate")
-#plot(conc~log(cat), data = concN)
-summary(lm(conc ~ cat, data = concN))
-summary(lm(conc ~ log(cat), data = concN))
-
-
 concord <- vapply(
   cli::cli_progress_along(seq_len(nAln), "Analysing"),
   function(i) {
@@ -68,7 +55,7 @@ concord <- vapply(
     if (file.exists(concCache)) {
       conc <- scan(concCache, quiet = TRUE)
       if (length(conc) != nChar) {
-        file.remove(ConcFile(sim, aln))
+        file.remove(ConcFile(sim, aln, "_chr"))
         stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
       }
     } else {
@@ -80,19 +67,6 @@ concord <- vapply(
   },
   double(nChar)
 )
-
-
-concDF <- data.frame(
-  conc = as.vector(concord),
-  cat = rep(signif(cats, 4), each = nChar / nCats)
-)
-
-boxplot(concDF$conc ~ concDF$cat, notch = TRUE,
-        frame.plot = FALSE, las = 3,
-        ylab = "Normalized clustering concordance",
-        xlab = "Generative rate")
-cor.test(concDF$conc, concDF$cat, method = "kendall") # -0.6690298 
-
 
 consist <- vapply(
   cli::cli_progress_along(seq_len(nAln), "Analysing"),
@@ -122,3 +96,58 @@ consist <- vapply(
   },
   matrix(double(), nChar, 7)
 )
+
+consDF <- data.frame(
+  ci = as.vector(consist[, "ci", ]),
+  cci = as.vector(consist[, "cci", ]),
+  ri = as.vector(consist[, "ri", ]),
+  rhi = 1 - as.vector(consist[, "rhi", ]),
+  rhiBar = 1 - as.vector(consist[, "rhiBar", ]),
+  rci = as.vector(consist[, "rci", ]),
+  cat = rep(signif(cats, 3), each = nChar / nCats)
+)
+
+CIPlot <- function(x) {
+  boxplot(consDF[[x]] ~ consDF$cat, notch = TRUE,
+          frame.plot = FALSE, las = 3,
+          ylab = c(ci = "Consistency index",
+                   cci = "CCI",
+                   ri = "Retention index",
+                   rhi = "1 - Relative homoplasy index (median)",
+                   rhiBar = "1 - Relative homoplasy index (mean)",
+                   rci = "Rescaled consistency index")[[x]],
+          xlab = "Generative rate")
+  cor.test(consDF[[x]], consDF$cat, method = "kendall") # -0.6690298 
+}
+
+
+par(mfrow = c(4, 2))
+
+concDF <- data.frame(
+  conc = as.vector(concord),
+  cat = rep(signif(cats, 4), each = nChar / nCats)
+)
+
+boxplot(concDF$conc ~ concDF$cat, notch = TRUE,
+        frame.plot = FALSE, las = 3,
+        ylab = "Clustering concordance",
+        xlab = "Generative rate")
+cor.test(concDF$conc, concDF$cat, method = "kendall") # -0.6690298 
+
+
+concN <- data.frame(
+  conc = as.vector(concordN),
+  cat = rep(signif(cats, 4), each = nChar / nCats)
+)
+boxplot(concN$conc ~ concN$cat, notch = TRUE,
+        frame.plot = FALSE, las = 3,
+        ylab = "Normalized clustering concordance",
+        xlab = "Generative rate")
+cor.test(concN$conc, concN$cat, method = "kendall") # tau = -0.5654185 
+
+CIPlot("ci")      # tau ~ -0.7885806
+CIPlot("cci")     # tau ~ -0.4323527
+CIPlot("ri")      # tau ~ -0.4762535
+CIPlot("rhi")     # tau ~ -0.5549066
+CIPlot("rhiBar")  # tau ~ -0.5431158
+CIPlot("rci")     # tau ~ -0.5211873
