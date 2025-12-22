@@ -13,20 +13,23 @@ referenceTree <- file.path("data-raw", sprintf("reference-%s.tre", sim)) |>
 refSplits <- as.Splits(referenceTree)
 tips <- names(read.nexus.data(DataFile(sim, "0001")))
 
-# Eugh, I don't like growing vectors like this!
-partCorrect <- logical(0)
-partQual <- numeric(0)
-postProb <- numeric(0)
-concord <- numeric(0)
-bremer <- numeric(0)
-tntStats <- c("symFq", "symGC", "boot", "jak", "pois")
-tntStat <- matrix(0, 0, length(tntStats), dimnames = list(NULL, tntStats))
-ufb <- numeric(0)
-iqStats <- c("alrt", "lbp", "abayes", "ufb") # .iqtree output file gives order
-iqStat <- matrix(0, 0, length(iqStats), dimnames = list(NULL, iqStats))
-splitH <- numeric(0)
-
 for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
+  if (i == 1) {
+    # Reset vectors.
+    # I don't like growing vectors like this!
+    partCorrect <- logical(0)
+    partQual <- numeric(0)
+    postProb <- numeric(0)
+    concord <- numeric(0)
+    bremer <- numeric(0)
+    tntStats <- c("symFq", "symGC", "boot", "jak", "pois")
+    tntStat <- matrix(0, 0, length(tntStats), dimnames = list(NULL, tntStats))
+    ufb <- numeric(0)
+    iqStats <- c("alrt", "lbp", "abayes", "ufb") # .iqtree output file gives order
+    iqStat <- matrix(0, 0, length(iqStats), dimnames = list(NULL, iqStats))
+    splitH <- numeric(0)
+  }
+  
   aln <- alnIDs[[i]]
   
   # Load MrBayes partitions
