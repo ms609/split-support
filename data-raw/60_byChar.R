@@ -104,13 +104,13 @@ consDF <- data.frame(
   rhi = 1 - as.vector(consist[, "rhi", ]),
   rhiBar = 1 - as.vector(consist[, "rhiBar", ]),
   conc = as.vector(concord),
-  cat = rep(signif(cats, 3), each = nChar / nCats)
+  cat = rep(sprintf("%.3f", cats), each = nChar / nCats)
 )
 
 nona <- consDF |> na.omit()
 
 CIPlot <- function(x) {
-  boxplot(consDF[[x]] ~ consDF$cat, notch = TRUE,
+  boxplot(consDF[[x]] ~ consDF$cat,# notch = TRUE,
           frame.plot = FALSE, las = 3,
           ylab = c(ci = "Consistency index",
                    ri = "Retention index",
@@ -119,16 +119,22 @@ CIPlot <- function(x) {
                    conc = "Clustering concordance",
                    rci = "Rescaled consistency index")[[x]],
           col = switch(x, conc = "gold", NULL),
-          xlab = "Generative rate")
-  cor.test(nona[[x]], nona$cat, method = "kendall")
+          xlab = "")
+  # cor.test(nona[[x]], nona$cat, method = "kendall")
 }
 
 
-par(mfrow = c(1, 5))
-
-CIPlot("conc")    # tau ~ -0.6530646
-CIPlot("ci")      # tau ~ -0.7734901
-CIPlot("ri")      # tau ~ -0.4762535
-CIPlot("rhi")     # tau ~ -0.5549066
-#CIPlot("rhiBar")  # tau ~ -0.5431158
-CIPlot("rci")     # tau ~ -0.5211873
+{
+  pdf("../char-concord/Fig 4 - character concordance.pdf", 8.4, 2.4)
+  par(mfrow = c(1, 5), mar = c(3.2, 5.2, 0.2, 0.2), cex = 0.6,
+      oma = c(1, 0, 0, 0))
+  
+  CIPlot("conc")    # tau ~ -0.6530646
+  CIPlot("ci")      # tau ~ -0.7734901
+  CIPlot("ri")      # tau ~ -0.4762535
+  CIPlot("rhi")     # tau ~ -0.5549066
+  #CIPlot("rhiBar")  # tau ~ -0.5431158
+  CIPlot("rci")     # tau ~ -0.5211873
+  mtext("Generative rate for character", 1, line = 0, outer = TRUE, cex = 0.6)
+  dev.off()
+}
