@@ -270,10 +270,16 @@ CIndex <- function(score, target) {
   ci  <- est + c(-1, 1) * 1.96 * se
   list(estimate = est, se = se, ci95 = ci, details = fit)
 }
-CIndex(dat$postProb, dat$partQual)$ci95
-CIndex(dat$quartet, dat$partQual)$ci95
-CIndex(dat$cluster, dat$partQual)$ci95
-CIndex(dat$phylo, dat$partQual)$ci95
+SomersD <- function(score, target) {
+  ret <- CIndex(score, target)[c("estimate", "ci95")]
+  lapply(ret, function(x) 2 * (x - 0.5))
+}
+
+SomersD(dat$postProb, dat$partQual)$estimate
+SomersD(dat$postProb, dat$partQual)$ci95
+SomersD(dat$quartet, dat$partQual)$ci95
+SomersD(dat$cluster, dat$partQual)$ci95
+SomersD(dat$phylo, dat$partQual)$ci95
 
 
 
@@ -284,7 +290,6 @@ CIndex(dat$phylo, dat$partQual)$ci95
 # How well does a measure predict whether a split is in the true tree?
 # We set `cf` to include only splits for which data is available under
 # both `var` and `cf`, to allow a straight comparison.
-# We also report the R² and AIC of a binomial regression with split T/F.
 Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   entries <- !is.na(var) & !is.na(cf)
   outcomes <- factor(partCorrect[entries], levels = c("FALSE", "TRUE"),
@@ -352,23 +357,20 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
        xpd = NA,
        cex = 0.8)
   
-  # Predict whether a split is 'TRUE' using binomial regression
-  m <- glm(outcomes ~ var, family = "binomial")
-  tau <- cor(as.numeric(outcomes), var, method = "kendall")
-  #sD <- DescTools::SomersDelta(var, as.numeric(outcomes))
-  smry <- summary(m)
-  mtext(paste0(
-    "n = ", sum(entries), "; ",
-    "AIC = ", round(smry$aic), "; ",
-    "\U03C4 = ", sprintf("%.3f", tau)#, "; ",
-    # "D = ", sprintf("%.3f", sD)
-    #"r\UB2 = ", sprintf("%.3f", 1 - (smry$deviance / smry$null.deviance))
-  ), 3, cex = 0.6)
+  
+  roc <- pROC::roc(predictor = var, response = as.numeric(outcomes))
+  sD <- SomersD(var, partQual[entries])
+  
+  message("n = ", sum(entries), ": ", title)
+  mtext(bquote(
+    ROC-AUC == .(sprintf("%.3f", roc$auc)) * ";" ~
+    D == .(sprintf("%.3f", sD$estimate))
+  ), 3, line = -0.3, cex = 0.6)
 }
 
 {
   cairo_pdf("../char-concord/Fig 3 - edge concordance.pdf", 5.4, 8.4)
-  par(mar = c(1.6, 1, 2.8, 1), font.main = 1, cex.main = 0.9)
+  par(mar = c(1.6, 1, 3, 1), font.main = 1, cex.main = 0.9)
   layout(rbind(1:3,
                c(4:5, 0),
                rep(0, 3),
