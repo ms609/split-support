@@ -221,7 +221,7 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   
   stopifnot(dim(concord)[[1]] == dim(tntStat)[[1]])
   stopifnot(dim(concord)[[1]] == length(postProb))
-}
+}; cli::cli_progress_done()
 
 common <- rowSums(is.na(concord)) == 0 &
   rowSums(is.na(tntStat)) == 0 &
@@ -231,17 +231,17 @@ common <- rowSums(is.na(concord)) == 0 &
 model <- glm(partCorrect ~ postProb + concord + bremer + tntStat + iqStat,
              family = "binomial")
 
-
-dat <- data.frame(
+allDat <- data.frame(
   occurs = partCorrect,
   partQual,
   postProb,
-  # tntStat,
+  tntStat,
   iqStat,
-  # bremer,
+  bremer,
   concord
-) |>
-  na.omit()
+)
+
+dat <- data.frame(occurs = partCorrect, partQual, postProb, concord) |> na.omit()
 
 rocPP <- pROC::roc(response = dat$occurs, predictor = dat$postProb)
 rocQ <- pROC::roc(response = dat$occurs, predictor = dat$quartet)
@@ -251,6 +251,9 @@ rocP <- pROC::roc(response = dat$occurs, predictor = dat$phylo)
 pROC::roc.test(rocQ, rocP, method = "delong", paired = TRUE)
 pROC::roc.test(rocQ, rocC, method = "delong", paired = TRUE)
 
+plot(rocC)
+plot(rocQ)
+plot(rocPP)
 
 
 
@@ -271,6 +274,13 @@ CIndex(dat$postProb, dat$partQual)$ci95
 CIndex(dat$quartet, dat$partQual)$ci95
 CIndex(dat$cluster, dat$partQual)$ci95
 CIndex(dat$phylo, dat$partQual)$ci95
+
+
+
+# Platt scaling: logistic regression of occurs ~ score.
+
+# devtools::install_github("bhklab/survcomp") 
+
 # How well does a measure predict whether a split is in the true tree?
 # We set `cf` to include only splits for which data is available under
 # both `var` and `cf`, to allow a straight comparison.
@@ -279,50 +289,98 @@ Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
   entries <- !is.na(var) & !is.na(cf)
   outcomes <- partCorrect[entries]
   var <- var[entries]
-  if (even) {
-    breaks <- quantile(var, seq(0, 1, length.out = breaks))
+  brks <- if (even) {
+    quantile(var, seq(0, 1, length.out = breaks))
+  } else {
+    seq(min(var), max(var), length.out = breaks)
   }
-  bins <- cut(var, breaks = unique(breaks))
-  plot(
-    table(bins, outcomes),
-    main = as.character(match.call()[-1]),
-    col = c("FALSE" = 2, "TRUE" = 3),
-    xlab = "",
-    ylab = ""
-  )
-  axis(1, signif(breaks), at = seq_along(breaks) / breaks, las = 2)
+  brks <- unique(brks)
+  pattern <- if (max(brks) > 2) "%.0f" else "%.2f"
+  bin_labels <- sprintf(pattern, brks[-length(brks)])
+  bins <- cut(var, breaks = brks, labels = bin_labels)
+  
+  col <- c("FALSE" = 2, "TRUE" = 3)
+  if (substr(as.character(match.call()[-1])[[1]], 1, 7) != "concord") {
+    col <- adjustcolor(col, alpha.f = 0.5)
+  }
+  title <- as.character(match.call()[2])
+  title <- switch(
+    title,
+    "postProb" = "Posterior probability",
+    "concord[, \"cluster\"]" = "Clustering concordance",
+    "concord[, \"quartet\"]" = "Quartet concordance",
+    "concord[, \"mutual\"]" = "Mutual clustering concordance",
+    "bremer" = "Bremer support",
+    "tntStat[, \"symFq\"]" = "Symmetric frequency",
+    "tntStat[, \"symGC\"]" = "Groups pres / cont",
+    "tntStat[, \"boot\"]" = "TNT bootstrap",
+    "tntStat[, \"jak\"]" = "TNT jackknife",
+    "tntStat[, \"pois\"]" = "poisson resampling",
+    
+    "iqStat[, \"ufb\"]" = "Ultra-fast bootstrap",
+    "iqStat[, \"lbp\"]" = "Local Bootstrap Probs",
+    "iqStat[, \"alrt\"]" = "Approx. lik. ratio test",
+    "iqStat[, \"abayes\"]" = "Approx. Bayes",
+    title)
+  
+  tab <- table(bins, outcomes)
+  tab <- tab[rowSums(tab) > 0, , drop = FALSE]
+  dimnames(tab)[[2]] <- rep("", dim(tab)[[2]])
+  plot(tab, main = title, col = col, las = 2, xlab = "", ylab = "")
   
   # Predict whether a split is 'TRUE' using binomial regression
   m <- glm(outcomes ~ var, family = "binomial")
   smry <- summary(m)
-  legend("left",
-         text.font = 1,
-         legend = c(paste("AIC:", round(smry$aic)),
-                    paste("r2", signif(1 - (smry$deviance / smry$null.deviance), 3))))
+  mtext(paste0(
+    "n = ", sum(entries), "; ",
+    "AIC = ", round(smry$aic), "; ",
+    "r\UB2 = ", sprintf("%.3f", 1 - (smry$deviance / smry$null.deviance))
+  ), 1, cex = 0.6)
 }
 
 allCF <- rowSums(concord) + postProb + rowSums(tntStat) + rowSums(iqStat) + bremer
 
-par(mfrow = c(4, 2), mar = rep(2, 4))
-Histy(postProb, cf = concord[, "quartet"])
-Histy(concord[, "cluster"], cf = postProb)
-Histy(concord[, "clusterNorm"], cf = postProb)
-Histy(concord[, "quartet"], cf = postProb)
-Histy(concord[, "mutual"], cf = postProb)
-Histy(concord[, "shared"], cf = postProb)
-Histy(concord[, "phylo"], cf = postProb)
-Histy(splitH, cf = postProb)
+par(mfrow = c(7, 3), mar = c(1, 1, 3, 1), font.main = 1, cex.main = 0.9)
+mlCF <- rowSums(concord) + postProb + iqStat[, "ufb"]
+Histy(concord[, "cluster"], cf = mlCF)
+# Histy(concord[, "clusterNorm"], cf = postProb) # rubbish
+Histy(concord[, "quartet"], cf = mlCF)
+Histy(concord[, "mutual"], cf = mlCF)
+Histy(postProb, cf = mlCF)
+Histy(iqStat[, "ufb"], cf = mlCF)
+plot.new()
+# Histy(concord[, "shared"], cf = postProb)
+# Histy(concord[, "phylo"], cf = postProb)
+#Histy(splitH, cf = postProb)
 
-par(mfrow = c(4, 2), mar = rep(2, 4))
-Histy(bremer, cf = concord[, "quartet"])
-Histy(concord[, "cluster"], cf = bremer)
-Histy(concord[, "clusterNorm"], cf = bremer)
-Histy(concord[, "quartet"], cf = bremer)
-Histy(concord[, "mutual"], cf = bremer)
-Histy(concord[, "shared"], cf = bremer)
-Histy(concord[, "phylo"], cf = bremer)
+tntCF <- rowSums(concord) + rowSums(tntStat) + bremer
+Histy(concord[, "cluster"], cf = tntCF)
+Histy(concord[, "quartet"], cf = tntCF)
+Histy(concord[, "mutual"], cf = tntCF)
+Histy(bremer, cf = tntCF)
+Histy(tntStat[, "symFq"], cf = tntCF)
+Histy(tntStat[, "symGC"], cf = tntCF)
+Histy(tntStat[, "boot"], cf = tntCF)
+Histy(tntStat[, "jak"], cf = tntCF)
+Histy(tntStat[, "pois"], cf = tntCF)
 
-par(mfrow = c(6, 3), mar = rep(2, 4))
+iqCF <- rowSums(concord) + rowSums(iqStat)
+Histy(concord[, "cluster"], cf = iqCF)
+Histy(concord[, "quartet"], cf = iqCF)
+Histy(concord[, "mutual"], cf = iqCF)
+Histy(iqStat[, "lbp"], cf = iqCF)
+Histy(iqStat[, "alrt"], cf = iqCF)
+Histy(iqStat[, "abayes"], cf = iqCF)
+
+
+
+
+
+
+
+
+
+par(mfrow = c(5, 3), mar = rep(2, 4))
 Histy(postProb, cf = allCF)
 Histy(bremer, cf = allCF)
 Histy(tntStat[, "symFq"], cf = allCF)
@@ -337,11 +395,11 @@ Histy(iqStat[, "alrt"], cf = allCF)
 Histy(iqStat[, "abayes"], cf = allCF)
 
 Histy(concord[, "cluster"], cf = allCF)
-Histy(concord[, "clusterNorm"], cf = allCF)
+# Histy(concord[, "clusterNorm"], cf = allCF)
 Histy(concord[, "quartet"], cf = allCF)
 Histy(concord[, "mutual"], cf = allCF)
-Histy(concord[, "shared"], cf = allCF)
-Histy(concord[, "phylo"], cf = allCF)
+# Histy(concord[, "shared"], cf = allCF)
+# Histy(concord[, "phylo"], cf = allCF)
 
 Peek <- function(var) {
   m <- glm(partCorrect ~ var, family = "binomial")
