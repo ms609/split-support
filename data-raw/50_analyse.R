@@ -228,9 +228,6 @@ common <- rowSums(is.na(concord)) == 0 &
   !is.na(bremer) &
   rowSums(is.na(iqStat)) == 0
 
-model <- glm(partCorrect ~ postProb + concord + bremer + tntStat + iqStat,
-             family = "binomial")
-
 allDat <- data.frame(
   occurs = partCorrect,
   partQual,
@@ -447,66 +444,6 @@ Histy(concord[, "quartet"], cf = allCF)
 Histy(concord[, "mutual"], cf = allCF)
 # Histy(concord[, "shared"], cf = allCF)
 # Histy(concord[, "phylo"], cf = allCF)
-
-Peek <- function(var) {
-  m <- glm(partCorrect ~ var, family = "binomial")
-  smry <- summary(m)
-  print(smry)
-  print(paste("R2:", signif(1 - smry$deviance / smry$null.deviance)))
-  AIC(m)
-}
-Peek(postProb)
-Peek(bremer)
-Peek(concord[, "quartet"])
-Peek(concord[, "cluster"])
-Peek(concord[, "clusterNorm"])
-Peek(concord[, "mutual"])
-Peek(iqStat[, "ufb"])
-
-m <- glm(partCorrect ~ concord[, "quartet"] + postProb, family = "binomial")
-AIC(m)
-m <- glm(partCorrect ~ concord[, "quartet"], family = "binomial")
-
-model <- glm(family = "binomial",
-             partCorrect[common] ~ 
- #              postProb[common] +
-#               bremer[common] +
-               concord[common, "quartet"] +
-               concord[common, "cluster"] +
-               concord[common, "clusterNorm"] +
-               concord[common, "phylo"] +
-               concord[common, "mutual"] +
-               concord[common, "shared"] +
-               tntStat[common, "symFq"] +
-               tntStat[common, "symGC"] +
-               tntStat[common, "boot"] +
-               tntStat[common, "jak"] + 
-               tntStat[common, "pois"] +
-               iqStat[common, "alrt"] +
-               iqStat[common, "lbp"] +
-               iqStat[common, "abayes"] +
-               iqStat[common, "ufb"]
-             )
-step(model) # AIC
-BIC(glm(family = "binomial", partCorrect[common] ~ postProb[common]))
-BIC(glm(family = "binomial", partCorrect[common] ~ iqStat[common, "ufb"]))
-BIC(glm(family = "binomial", partCorrect[common] ~ bremer[common]))
-BIC(glm(family = "binomial", partCorrect[common] ~ tntStat[common, "symGC"]))
-BIC(glm(family = "binomial", partCorrect[common] ~ concord[common, "quartet"]))
-BIC(glm(family = "binomial", partCorrect[common] ~ concord[common, "mutual"]))
-BIC(glm(family = "binomial", partCorrect[common] ~ concord[common, "shared"]))
-# BIC: https://stackoverflow.com/questions/19400494
-step(model, criterion = "BIC", k = log(length(partCorrect)))
-
-AIC(glm(family = "binomial", partCorrect[common] ~ postProb[common]))
-AIC(glm(family = "binomial", partCorrect[common] ~ iqStat[common, "ufb"]))
-AIC(glm(family = "binomial", partCorrect[common] ~ bremer[common]))
-AIC(glm(family = "binomial", partCorrect[common] ~ tntStat[common, "symGC"]))
-AIC(glm(family = "binomial", partCorrect[common] ~ concord[common, "quartet"]))
-AIC(glm(family = "binomial", partCorrect[common] ~ concord[common, "mutual"]))
-AIC(glm(family = "binomial", partCorrect[common] ~ concord[common, "shared"]))
-
-
 
 
 # The lower the Brier score is for a set of predictions,
