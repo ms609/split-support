@@ -262,12 +262,6 @@ SomersD <- function(score, target) {
   lapply(ret, function(x) 2 * (x - 0.5))
 }
 
-SomersD(dat$postProb, dat$partQual)$estimate
-SomersD(dat$postProb, dat$partQual)$ci95
-SomersD(dat$quartet, dat$partQual)$ci95
-SomersD(dat$cluster, dat$partQual)$ci95
-SomersD(dat$phylo, dat$partQual)$ci95
-
 
 
 # Platt scaling: logistic regression of occurs ~ score.
