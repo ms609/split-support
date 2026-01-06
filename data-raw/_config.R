@@ -91,3 +91,24 @@ keepExt <- c(
   # "mcmc" # Standard deviations of splits - see `tstat`
   "pstat" # Convergence diagnostics
 )
+
+Panel <- function(i, xOffset = 3, yOffset = 0) {
+  if (is.numeric(i)) {
+    i <- paste0("(", letters[i], ")")
+  }
+  usr <- par("usr")
+  xOffset <- xOffset * strwidth("M")
+  yOffset <- yOffset * strheight("M")
+  
+  x <- usr[[1]] - xOffset
+  if (par("xlog")) {
+    x <- 10 ^ x
+  }
+  
+  y <- usr[[4]] - yOffset
+  if (par("ylog")) {
+    y <- 10 ^ y
+  }
+  
+  text(x, y, i, xpd = NA, adj = c(1, 1)) # adj: right-align | top-align
+}
