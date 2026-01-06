@@ -240,20 +240,6 @@ allDat <- data.frame(
 
 dat <- data.frame(occurs = partCorrect, partQual, postProb, concord) |> na.omit()
 
-rocPP <- pROC::roc(response = dat$occurs, predictor = dat$postProb)
-rocQ <- pROC::roc(response = dat$occurs, predictor = dat$quartet)
-rocC <- pROC::roc(response = dat$occurs, predictor = dat$cluster)
-rocP <- pROC::roc(response = dat$occurs, predictor = dat$phylo)
-
-pROC::roc.test(rocQ, rocP, method = "delong", paired = TRUE)
-pROC::roc.test(rocQ, rocC, method = "delong", paired = TRUE)
-
-plot(rocC)
-plot(rocQ)
-plot(rocPP)
-
-
-
 CIndex <- function(score, target) {
   fit <- survcomp::concordance.index(
     x = score,
