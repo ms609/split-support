@@ -55,12 +55,41 @@ concord <- vapply(
     if (file.exists(concCache)) {
       conc <- scan(concCache, quiet = TRUE)
       if (length(conc) != nChar) {
-        file.remove(ConcFile(sim, aln, "_chr"))
+        file.remove(concCache)
         stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
       }
     } else {
       conc <- ClusteringConcordance(refSplits, dataset, normalize = FALSE,
                                     return = "char")
+      write(conc, concCache)
+    }
+    conc
+  },
+  double(nChar)
+)
+
+qConcord <- vapply(
+  cli::cli_progress_along(seq_len(nAln), "Analysing"),
+  function(i) {
+    aln <- alnIDs[[i]]
+    
+    # Calculate concordances
+    dataset <- DataFile(sim, aln) |>
+      read.nexus.data() |>
+      unlist() |>
+      matrix(nrow = nTip, byrow = TRUE,
+             dimnames = list(tips, NULL)) |>
+      MatrixToPhyDat()
+    
+    concCache <- ConcFile(sim, aln, "_chrQ")
+    if (file.exists(concCache)) {
+      conc <- scan(concCache, quiet = TRUE)
+      if (length(conc) != nChar) {
+        file.remove(concCache)
+        stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
+      }
+    } else {
+      conc <- QuartetConcordance(refSplits, dataset, return = "char")
       write(conc, concCache)
     }
     conc
@@ -104,12 +133,13 @@ consDF <- data.frame(
   rhi = 1 - as.vector(consist[, "rhi", ]),
   rhiBar = 1 - as.vector(consist[, "rhiBar", ]),
   conc = as.vector(concord),
+  qConc = as.vector(qConcord),
   cat = rep(sprintf("%.3f", cats), each = nChar / nCats)
 )
 
 nona <- consDF |> na.omit()
 
-CIPlot <- function(x) {
+CIPlot <- function(x, calcTau = FALSE) {
   boxplot(consDF[[x]] ~ consDF$cat,# notch = TRUE,
           frame.plot = FALSE, las = 3,
           ylab = c(ci = "Consistency index",
@@ -117,13 +147,13 @@ CIPlot <- function(x) {
                    rhi = "1 - Relative homoplasy index",
                    rhiBar = "1 - Relative homoplasy index (mean)",
                    conc = "Clustering concordance",
+                   qConc = "Quartet concordance",
                    rci = "Rescaled consistency index")[[x]],
           col = switch(x, conc = "gold", NULL),
           xlab = "")
   
-  if (recalculate <- FALSE) {
-    # Takes a minute to run; set recalculate <- TRUE to compute
-    cor.test(nona[[x]], nona$cat, method = "kendall")
+  if (calcTau) {
+    cor.test(nona[[x]], as.numeric(nona$cat), method = "kendall")
   }
 }
 
@@ -133,10 +163,11 @@ resolution[rev(order(resolution)[-1])]
 
 {
   pdf("../char-concord/Fig 4 - character concordance.pdf", 8.4, 2.4)
-  par(mfrow = c(1, 5), mar = c(3.7, 5.2, 0.2, 0.2), cex = 0.6,
+  par(mfrow = c(1, 6), mar = c(3.7, 5.2, 0.2, 0.2), cex = 0.6,
       oma = c(1, 0, 0, 0))
   
   CIPlot("conc")    # tau ~ -0.6530646
+  CIPlot("qConc")   # tau ~ -0.4571022
   CIPlot("ci")      # tau ~ -0.7734901
   CIPlot("ri")      # tau ~ -0.4762535
   CIPlot("rhi")     # tau ~ -0.5549066
