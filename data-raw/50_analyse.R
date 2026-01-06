@@ -354,18 +354,20 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   
   # Predict whether a split is 'TRUE' using binomial regression
   m <- glm(outcomes ~ var, family = "binomial")
+  tau <- cor(as.numeric(outcomes), var, method = "kendall")
+  #sD <- DescTools::SomersDelta(var, as.numeric(outcomes))
   smry <- summary(m)
   mtext(paste0(
     "n = ", sum(entries), "; ",
     "AIC = ", round(smry$aic), "; ",
-    "r\UB2 = ", sprintf("%.3f", 1 - (smry$deviance / smry$null.deviance))
+    "\U03C4 = ", sprintf("%.3f", tau)#, "; ",
+    # "D = ", sprintf("%.3f", sD)
+    #"r\UB2 = ", sprintf("%.3f", 1 - (smry$deviance / smry$null.deviance))
   ), 3, cex = 0.6)
 }
 
-allCF <- rowSums(concord) + postProb + rowSums(tntStat) + rowSums(iqStat) + bremer
-
 {
-  pdf("../char-concord/Fig 3 - edge concordance.pdf", 5.4, 8.4)
+  cairo_pdf("../char-concord/Fig 3 - edge concordance.pdf", 5.4, 8.4)
   par(mar = c(1.6, 1, 2.8, 1), font.main = 1, cex.main = 0.9)
   layout(rbind(1:3,
                c(4:5, 0),
@@ -418,6 +420,7 @@ allCF <- rowSums(concord) + postProb + rowSums(tntStat) + rowSums(iqStat) + brem
 
 
 
+allCF <- rowSums(concord) + postProb + rowSums(tntStat) + rowSums(iqStat) + bremer
 par(mfrow = c(5, 3), mar = rep(2, 4))
 Histy(postProb, cf = allCF)
 Histy(bremer, cf = allCF)
