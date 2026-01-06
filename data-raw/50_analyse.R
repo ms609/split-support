@@ -13,23 +13,16 @@ referenceTree <- file.path("data-raw", sprintf("reference-%s.tre", sim)) |>
 refSplits <- as.Splits(referenceTree)
 tips <- names(read.nexus.data(DataFile(sim, "0001")))
 
-for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
-  if (i == 1) {
-    # Reset vectors.
-    # I don't like growing vectors like this!
-    partCorrect <- logical(0)
-    partQual <- numeric(0)
-    postProb <- numeric(0)
-    concord <- numeric(0)
-    bremer <- numeric(0)
-    tntStats <- c("symFq", "symGC", "boot", "jak", "pois")
-    tntStat <- matrix(0, 0, length(tntStats), dimnames = list(NULL, tntStats))
-    ufb <- numeric(0)
-    iqStats <- c("alrt", "lbp", "abayes", "ufb") # .iqtree output file gives order
-    iqStat <- matrix(0, 0, length(iqStats), dimnames = list(NULL, iqStats))
-    splitH <- numeric(0)
-  }
-  
+partCorrectList <- vector("list", nAln)
+partQualList <- vector("list", nAln)
+postProbList <- vector("list", nAln)
+concordList <- vector("list", nAln)
+bremerList <- vector("list", nAln)
+splitHList <- vector("list", nAln)
+tntStatList <- vector("list", nAln)
+iqStatList <- vector("list", nAln)
+
+for (i in cli::cli_progress_along(seq_len(5), "Analysing")) {
   aln <- alnIDs[[i]]
   
   # Load MrBayes partitions
@@ -196,7 +189,7 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   }
   
   partInRef <- partitions %in% refSplits
-  partCorrect <- c(partCorrect, partInRef)
+  partCorrectList[[i]] <- partInRef
   
   qCache <- PartQFile(sim, aln)
   if (file.exists(qCache)) {
@@ -210,18 +203,29 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
       double(1))
     write(partQ, qCache)
   }
-  partQual <- c(partQual, partQ)
+  partQualList[[i]] <- partQ
   
-  postProb <- c(postProb, pp, rep(0, sum(tntOnly, iqOnly, ufbOnly)))
-  concord <- rbind(concord, conc)
-  splitH <- rbind(splitH, h)
-  bremer <- c(bremer, brem)
-  tntStat <- rbind(tntStat, tntTags)
-  iqStat <- rbind(iqStat, iqTags)
+  postProbList[[i]] <- c(pp, rep(0, sum(tntOnly, iqOnly, ufbOnly)))
+  concordList[[i]] <- conc
+  splitHList[[i]] <- h
+  bremerList[[i]] <- brem
+  tntStatList[[i]] <- tntTags
+  iqStatList[[i]] <- iqTags
   
-  stopifnot(dim(concord)[[1]] == dim(tntStat)[[1]])
-  stopifnot(dim(concord)[[1]] == length(postProb))
 }; cli::cli_progress_done()
+
+
+partCorrect <- do.call(c, partCorrectList)
+partQual <- do.call(c, partQualList)
+postProb <- do.call(c, postProbList)
+concord <- do.call(rbind, concordList)
+splitH <- do.call(rbind, splitHList)
+bremer <- do.call(c, bremerList)
+tntStat <- do.call(rbind, tntStatList)
+iqStat <- do.call(rbind, iqStatList)
+
+colnames(tntStat) <- c("symFq", "symGC", "boot", "jak", "pois")
+colnames(iqStat) <- c("alrt", "lbp", "abayes", "ufb") # .iqtree output file gives order
 
 common <- rowSums(is.na(concord)) == 0 &
   rowSums(is.na(tntStat)) == 0 &
