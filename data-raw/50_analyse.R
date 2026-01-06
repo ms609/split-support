@@ -364,8 +364,8 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   #   ROC-AUC == .(sprintf("%.3f", roc$auc)) * ";" ~
   #   D == .(sprintf("%.3f", sD$estimate))
   # ), 3, line = -0.3, cex = 0.6)
-  mtext(paste0("ROC-AUC = ", sprintf("%.3f", roc$auc), "; ",
-               "D = ", sprintf("%.3f", sD$estimate)),
+  mtext(paste0("ROC-AUC = ", sprintf("%.2f", roc$auc), "; ",
+               "D = ", sprintf("%.2f", sD$estimate)),
         3, cex = 0.6)
 }
 
