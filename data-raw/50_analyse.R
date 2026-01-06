@@ -358,14 +358,18 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
        cex = 0.8)
   
   
-  roc <- pROC::roc(predictor = var, response = as.numeric(outcomes))
+  roc <- pROC::roc(predictor = var, response = as.numeric(outcomes),
+                   quiet = TRUE)
   sD <- SomersD(var, partQual[entries])
   
   message("n = ", sum(entries), ": ", title)
-  mtext(bquote(
-    ROC-AUC == .(sprintf("%.3f", roc$auc)) * ";" ~
-    D == .(sprintf("%.3f", sD$estimate))
-  ), 3, line = -0.3, cex = 0.6)
+  # mtext(bquote(
+  #   ROC-AUC == .(sprintf("%.3f", roc$auc)) * ";" ~
+  #   D == .(sprintf("%.3f", sD$estimate))
+  # ), 3, line = -0.3, cex = 0.6)
+  mtext(paste0("ROC-AUC = ", sprintf("%.3f", roc$auc), "; ",
+               "D = ", sprintf("%.3f", sD$estimate)),
+        3, cex = 0.6)
 }
 
 {
