@@ -34,7 +34,7 @@ for (aln in alnIDs) {
                        # " -nt auto -ntmax 6 " slows analyses down considerably.
              " -seed 1 ", # Set random seed for reproducibility
              #" -b 1000", # Nonparametric bootstrap is slow and can't
-                          # be run alongside UFB
+             # be run alongside UFB
              " -bb 1000 ", # Number of ultrafast bootstrap replicates
              " -bnni ", # Avoids branch support overestimates in UFB
              " -lbp 1000 ", # Fast local bootstrap probability
@@ -43,7 +43,7 @@ for (aln in alnIDs) {
              " -quiet ",
              " --redo-tree ", # Overwrite previous run results
              ""
-             )
+      )
     )
     
     # Remove unneeded results files
