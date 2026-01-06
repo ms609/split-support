@@ -22,7 +22,10 @@ splitHList <- vector("list", nAln)
 tntStatList <- vector("list", nAln)
 iqStatList <- vector("list", nAln)
 
-for (i in cli::cli_progress_along(seq_len(5), "Analysing")) {
+tntStats <- c("symFq", "symGC", "boot", "jak", "pois")
+iqStats <- c("alrt", "lbp", "abayes", "ufb") # .iqtree output file gives order
+
+for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   aln <- alnIDs[[i]]
   
   # Load MrBayes partitions
@@ -224,8 +227,10 @@ bremer <- do.call(c, bremerList)
 tntStat <- do.call(rbind, tntStatList)
 iqStat <- do.call(rbind, iqStatList)
 
-colnames(tntStat) <- c("symFq", "symGC", "boot", "jak", "pois")
-colnames(iqStat) <- c("alrt", "lbp", "abayes", "ufb") # .iqtree output file gives order
+colnames(tntStat) <- tntStats
+colnames(iqStat) <- iqStats
+
+save.image("gotThisFar.RData")
 
 common <- rowSums(is.na(concord)) == 0 &
   rowSums(is.na(tntStat)) == 0 &
@@ -244,22 +249,19 @@ allDat <- data.frame(
 
 dat <- data.frame(occurs = partCorrect, partQual, postProb, concord) |> na.omit()
 
-CIndex <- function(score, target) {
-  fit <- survcomp::concordance.index(
-    x = score,
-    surv.time  = -target,
-    surv.event = rep(1, length(target)),
-    method = "noether",
-    na.rm  = TRUE)
-  # fit$c.index is in [0,1]; 0.5 = random
-  est <- fit$c.index
-  se  <- fit$se
-  ci  <- est + c(-1, 1) * 1.96 * se
-  list(estimate = est, se = se, ci95 = ci, details = fit)
-}
 SomersD <- function(score, target) {
-  ret <- CIndex(score, target)[c("estimate", "ci95")]
-  lapply(ret, function(x) 2 * (x - 0.5))
+  # C index = (Dxy + 1) / 2
+  fit <- Hmisc::rcorr.cens(score, target)
+  
+  est <- fit["Dxy"]
+  # Standard error for Dxy
+  se  <- fit["S.D."] / sqrt(fit["n"]) 
+  
+  ci  <- est + c(-1, 1) * 1.96 * se
+  list(estimate = est, ci95 = ci)
+}
+CIndex <- function(score, target) {
+  lapply(SomersD(score, target), function(x) (x + 1) / 2)
 }
 
 
@@ -341,7 +343,8 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   
   roc <- pROC::roc(predictor = var, response = as.numeric(outcomes),
                    quiet = TRUE)
-  sD <- SomersD(var, partQual[entries])
+  #sD <- SomersD(var, partQual[entries])
+  cIdx <- CIndex(var, partQual[entries])
   
   message("n = ", sum(entries), ": ", title)
   # mtext(bquote(
@@ -349,7 +352,8 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   #   D == .(sprintf("%.3f", sD$estimate))
   # ), 3, line = -0.3, cex = 0.6)
   mtext(paste0("ROC-AUC = ", sprintf("%.2f", roc$auc), "; ",
-               "D = ", sprintf("%.2f", sD$estimate)),
+               "C-index = ", sprintf("%.2f", cIdx$estimate)),
+               #"D = ", sprintf("%.2f", sD$estimate)),
         3, cex = 0.6)
 }
 
@@ -368,6 +372,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
          heights = c(1, 1, 1/5, 1, 1, 1/5, 1, 1, 1))
   mlCF <- rowSums(concord) + postProb + iqStat[, "ufb"]
   Histy(concord[, "cluster"], cf = mlCF)
+  Panel("a")
   # Histy(concord[, "clusterNorm"], cf = postProb) # rubbish
   Histy(concord[, "mutual"], cf = mlCF)
   Histy(concord[, "quartet"], cf = mlCF)
@@ -379,6 +384,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   
   iqCF <- rowSums(concord) + rowSums(iqStat)
   Histy(concord[, "cluster"], cf = iqCF)
+  Panel("b")
   Histy(concord[, "mutual"], cf = iqCF)
   Histy(concord[, "quartet"], cf = iqCF)
   Histy(iqStat[, "lbp"], cf = iqCF)
@@ -387,14 +393,15 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   
   tntCF <- rowSums(concord) + rowSums(tntStat) + bremer
   Histy(concord[, "cluster"], cf = tntCF)
+  Panel("c")
   Histy(concord[, "mutual"], cf = tntCF)
   Histy(concord[, "quartet"], cf = tntCF)
-  Histy(bremer, cf = tntCF)
-  Histy(tntStat[, "boot"], cf = tntCF)
   Histy(tntStat[, "jak"], cf = tntCF)
-  Histy(tntStat[, "pois"], cf = tntCF)
+  Histy(tntStat[, "boot"], cf = tntCF)
   Histy(tntStat[, "symFq"], cf = tntCF)
   Histy(tntStat[, "symGC"], cf = tntCF)
+  Histy(tntStat[, "pois"], cf = tntCF)
+  Histy(bremer, cf = tntCF)
   
   dev.off()
 }
@@ -405,31 +412,31 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 
 
 
-
-
-allCF <- rowSums(concord) + postProb + rowSums(tntStat) + rowSums(iqStat) + bremer
-par(mfrow = c(5, 3), mar = rep(2, 4))
-Histy(postProb, cf = allCF)
-Histy(bremer, cf = allCF)
-Histy(tntStat[, "symFq"], cf = allCF)
-Histy(tntStat[, "symGC"], cf = allCF)
-Histy(tntStat[, "boot"], cf = allCF)
-Histy(tntStat[, "jak"], cf = allCF)
-Histy(tntStat[, "pois"], cf = allCF)
-
-Histy(iqStat[, "ufb"], cf = allCF)
-Histy(iqStat[, "lbp"], cf = allCF)
-Histy(iqStat[, "alrt"], cf = allCF)
-Histy(iqStat[, "abayes"], cf = allCF)
-
-Histy(concord[, "cluster"], cf = allCF)
-# Histy(concord[, "clusterNorm"], cf = allCF)
-Histy(concord[, "quartet"], cf = allCF)
-Histy(concord[, "mutual"], cf = allCF)
-# Histy(concord[, "shared"], cf = allCF)
-# Histy(concord[, "phylo"], cf = allCF)
-
-
-# The lower the Brier score is for a set of predictions,
-# the better the predictions are calibrated.
-# mclust::BrierScore(cbind(1 - postProb, postProb), partCorrect)
+# 
+# 
+# allCF <- rowSums(concord) + postProb + rowSums(tntStat) + rowSums(iqStat) + bremer
+# par(mfrow = c(5, 3), mar = rep(2, 4))
+# Histy(postProb, cf = allCF)
+# Histy(bremer, cf = allCF)
+# Histy(tntStat[, "symFq"], cf = allCF)
+# Histy(tntStat[, "symGC"], cf = allCF)
+# Histy(tntStat[, "boot"], cf = allCF)
+# Histy(tntStat[, "jak"], cf = allCF)
+# Histy(tntStat[, "pois"], cf = allCF)
+# 
+# Histy(iqStat[, "ufb"], cf = allCF)
+# Histy(iqStat[, "lbp"], cf = allCF)
+# Histy(iqStat[, "alrt"], cf = allCF)
+# Histy(iqStat[, "abayes"], cf = allCF)
+# 
+# Histy(concord[, "cluster"], cf = allCF)
+# # Histy(concord[, "clusterNorm"], cf = allCF)
+# Histy(concord[, "quartet"], cf = allCF)
+# Histy(concord[, "mutual"], cf = allCF)
+# # Histy(concord[, "shared"], cf = allCF)
+# # Histy(concord[, "phylo"], cf = allCF)
+# 
+# 
+# # The lower the Brier score is for a set of predictions,
+# # the better the predictions are calibrated.
+# # mclust::BrierScore(cbind(1 - postProb, postProb), partCorrect)
