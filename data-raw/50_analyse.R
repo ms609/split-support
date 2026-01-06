@@ -285,7 +285,7 @@ CIndex(dat$phylo, dat$partQual)$ci95
 # We set `cf` to include only splits for which data is available under
 # both `var` and `cf`, to allow a straight comparison.
 # We also report the R² and AIC of a binomial regression with split T/F.
-Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
+Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   entries <- !is.na(var) & !is.na(cf)
   outcomes <- factor(partCorrect[entries], levels = c("FALSE", "TRUE"),
                      ordered = TRUE)
@@ -319,7 +319,7 @@ Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
     "tntStat[, \"pois\"]" = "Poisson resampling",
     
     "iqStat[, \"ufb\"]" = "Ultra-fast bootstrap",
-    "iqStat[, \"lbp\"]" = "Local Bootstrap Probs",
+    "iqStat[, \"lbp\"]" = "Local bootstrap probabilities",
     "iqStat[, \"alrt\"]" = "Approx. lik. ratio test",
     "iqStat[, \"abayes\"]" = "Approx. Bayes",
     title)
@@ -365,19 +365,18 @@ Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
 allCF <- rowSums(concord) + postProb + rowSums(tntStat) + rowSums(iqStat) + bremer
 
 {
-  
-  pdf("../char-concord/Fig 3 - edge concordance.pdf", 8.4, 2.4)
+  pdf("../char-concord/Fig 3 - edge concordance.pdf", 5.4, 8.4)
   par(mar = c(1.6, 1, 2.8, 1), font.main = 1, cex.main = 0.9)
   layout(rbind(1:3,
                c(4:5, 0),
                rep(0, 3),
                6:8,
                9:11,
-               12:14,
                rep(0, 3),
+               12:14,
                15:17,
                18:20),
-         heights = c(1, 1, 1/5, 1, 1, 1, 1/5, 1, 1))
+         heights = c(1, 1, 1/5, 1, 1, 1/5, 1, 1, 1))
   mlCF <- rowSums(concord) + postProb + iqStat[, "ufb"]
   Histy(concord[, "cluster"], cf = mlCF)
   # Histy(concord[, "clusterNorm"], cf = postProb) # rubbish
@@ -389,25 +388,24 @@ allCF <- rowSums(concord) + postProb + rowSums(tntStat) + rowSums(iqStat) + brem
   # Histy(concord[, "phylo"], cf = postProb)
   #Histy(splitH, cf = postProb)
   
+  iqCF <- rowSums(concord) + rowSums(iqStat)
+  Histy(concord[, "cluster"], cf = iqCF)
+  Histy(concord[, "mutual"], cf = iqCF)
+  Histy(concord[, "quartet"], cf = iqCF)
+  Histy(iqStat[, "lbp"], cf = iqCF)
+  Histy(iqStat[, "abayes"], cf = iqCF)
+  Histy(iqStat[, "alrt"], cf = iqCF)
   
   tntCF <- rowSums(concord) + rowSums(tntStat) + bremer
   Histy(concord[, "cluster"], cf = tntCF)
   Histy(concord[, "mutual"], cf = tntCF)
   Histy(concord[, "quartet"], cf = tntCF)
   Histy(bremer, cf = tntCF)
-  Histy(tntStat[, "symFq"], cf = tntCF)
-  Histy(tntStat[, "symGC"], cf = tntCF)
   Histy(tntStat[, "boot"], cf = tntCF)
   Histy(tntStat[, "jak"], cf = tntCF)
   Histy(tntStat[, "pois"], cf = tntCF)
-  
-  iqCF <- rowSums(concord) + rowSums(iqStat)
-  Histy(concord[, "cluster"], cf = iqCF)
-  Histy(concord[, "mutual"], cf = iqCF)
-  Histy(concord[, "quartet"], cf = iqCF)
-  Histy(iqStat[, "lbp"], cf = iqCF)
-  Histy(iqStat[, "alrt"], cf = iqCF)
-  Histy(iqStat[, "abayes"], cf = iqCF)
+  Histy(tntStat[, "symFq"], cf = tntCF)
+  Histy(tntStat[, "symGC"], cf = tntCF)
   
   dev.off()
 }
