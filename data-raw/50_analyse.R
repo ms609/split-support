@@ -287,7 +287,8 @@ CIndex(dat$phylo, dat$partQual)$ci95
 # We also report the R² and AIC of a binomial regression with split T/F.
 Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
   entries <- !is.na(var) & !is.na(cf)
-  outcomes <- partCorrect[entries]
+  outcomes <- factor(partCorrect[entries], levels = c("FALSE", "TRUE"),
+                     ordered = TRUE)
   var <- var[entries]
   brks <- if (even) {
     quantile(var, seq(0, 1, length.out = breaks))
@@ -296,10 +297,10 @@ Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
   }
   brks <- unique(brks)
   pattern <- if (max(brks) > 2) "%.0f" else "%.2f"
-  bin_labels <- sprintf(pattern, brks[-length(brks)])
-  bins <- cut(var, breaks = brks, labels = bin_labels)
+  binLabels <- sprintf(pattern, brks[-length(brks)])
+  bins <- cut(var, breaks = brks)
   
-  col <- c("FALSE" = 2, "TRUE" = 3)
+  col <- c("TRUE" = "3", "FALSE" = "2")
   if (substr(as.character(match.call()[-1])[[1]], 1, 7) != "concord") {
     col <- adjustcolor(col, alpha.f = 0.5)
   }
@@ -315,7 +316,7 @@ Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
     "tntStat[, \"symGC\"]" = "Groups pres / cont",
     "tntStat[, \"boot\"]" = "TNT bootstrap",
     "tntStat[, \"jak\"]" = "TNT jackknife",
-    "tntStat[, \"pois\"]" = "poisson resampling",
+    "tntStat[, \"pois\"]" = "Poisson resampling",
     
     "iqStat[, \"ufb\"]" = "Ultra-fast bootstrap",
     "iqStat[, \"lbp\"]" = "Local Bootstrap Probs",
@@ -324,9 +325,32 @@ Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
     title)
   
   tab <- table(bins, outcomes)
-  tab <- tab[rowSums(tab) > 0, , drop = FALSE]
-  dimnames(tab)[[2]] <- rep("", dim(tab)[[2]])
-  plot(tab, main = title, col = col, las = 2, xlab = "", ylab = "")
+  #tab <- tab[rowSums(tab) > 0, , drop = FALSE]
+  #dimnames(tab)[[2]] <- rep("", dim(tab)[[2]])
+  spTab <- spineplot(tab, main = title, col = col,
+                     axes = FALSE,
+                     xaxlabels = "", yaxlabels = "", xlab = "", ylab = "",
+                     border = NA)
+  
+  binCounts <- rowSums(tab)
+  #binLabels <- binLabels[binCounts > 0]
+  widths <- binCounts / sum(binCounts)
+  edges <- cumsum(widths)
+  leftEdges <- c(0, edges[-length(edges)])
+  # The centre is the average of the left and right edges
+  centres <- (leftEdges + edges) / 2
+  usr <- par("usr")
+  plotWidth <- usr[[2]] - usr[[1]]
+  # Map our 0-1 centres to the actual usr coordinates
+  x <- usr[[1]] + (centres * plotWidth)
+  
+  text(x = x,
+       y = -0.06,
+       labels = binLabels,
+       srt = 90,
+       adj = 1,
+       xpd = NA,
+       cex = 0.8)
   
   # Predict whether a split is 'TRUE' using binomial regression
   m <- glm(outcomes ~ var, family = "binomial")
@@ -335,42 +359,58 @@ Histy <- function(var, breaks = 20, even = TRUE, cf = var) { # "Mosaic plot"
     "n = ", sum(entries), "; ",
     "AIC = ", round(smry$aic), "; ",
     "r\UB2 = ", sprintf("%.3f", 1 - (smry$deviance / smry$null.deviance))
-  ), 1, cex = 0.6)
+  ), 3, cex = 0.6)
 }
 
 allCF <- rowSums(concord) + postProb + rowSums(tntStat) + rowSums(iqStat) + bremer
 
-par(mfrow = c(7, 3), mar = c(1, 1, 3, 1), font.main = 1, cex.main = 0.9)
-mlCF <- rowSums(concord) + postProb + iqStat[, "ufb"]
-Histy(concord[, "cluster"], cf = mlCF)
-# Histy(concord[, "clusterNorm"], cf = postProb) # rubbish
-Histy(concord[, "quartet"], cf = mlCF)
-Histy(concord[, "mutual"], cf = mlCF)
-Histy(postProb, cf = mlCF)
-Histy(iqStat[, "ufb"], cf = mlCF)
-plot.new()
-# Histy(concord[, "shared"], cf = postProb)
-# Histy(concord[, "phylo"], cf = postProb)
-#Histy(splitH, cf = postProb)
-
-tntCF <- rowSums(concord) + rowSums(tntStat) + bremer
-Histy(concord[, "cluster"], cf = tntCF)
-Histy(concord[, "quartet"], cf = tntCF)
-Histy(concord[, "mutual"], cf = tntCF)
-Histy(bremer, cf = tntCF)
-Histy(tntStat[, "symFq"], cf = tntCF)
-Histy(tntStat[, "symGC"], cf = tntCF)
-Histy(tntStat[, "boot"], cf = tntCF)
-Histy(tntStat[, "jak"], cf = tntCF)
-Histy(tntStat[, "pois"], cf = tntCF)
-
-iqCF <- rowSums(concord) + rowSums(iqStat)
-Histy(concord[, "cluster"], cf = iqCF)
-Histy(concord[, "quartet"], cf = iqCF)
-Histy(concord[, "mutual"], cf = iqCF)
-Histy(iqStat[, "lbp"], cf = iqCF)
-Histy(iqStat[, "alrt"], cf = iqCF)
-Histy(iqStat[, "abayes"], cf = iqCF)
+{
+  
+  pdf("../char-concord/Fig 3 - edge concordance.pdf", 8.4, 2.4)
+  par(mar = c(1.6, 1, 2.8, 1), font.main = 1, cex.main = 0.9)
+  layout(rbind(1:3,
+               c(4:5, 0),
+               rep(0, 3),
+               6:8,
+               9:11,
+               12:14,
+               rep(0, 3),
+               15:17,
+               18:20),
+         heights = c(1, 1, 1/5, 1, 1, 1, 1/5, 1, 1))
+  mlCF <- rowSums(concord) + postProb + iqStat[, "ufb"]
+  Histy(concord[, "cluster"], cf = mlCF)
+  # Histy(concord[, "clusterNorm"], cf = postProb) # rubbish
+  Histy(concord[, "mutual"], cf = mlCF)
+  Histy(concord[, "quartet"], cf = mlCF)
+  Histy(postProb, cf = mlCF)
+  Histy(iqStat[, "ufb"], cf = mlCF)
+  # Histy(concord[, "shared"], cf = postProb)
+  # Histy(concord[, "phylo"], cf = postProb)
+  #Histy(splitH, cf = postProb)
+  
+  
+  tntCF <- rowSums(concord) + rowSums(tntStat) + bremer
+  Histy(concord[, "cluster"], cf = tntCF)
+  Histy(concord[, "mutual"], cf = tntCF)
+  Histy(concord[, "quartet"], cf = tntCF)
+  Histy(bremer, cf = tntCF)
+  Histy(tntStat[, "symFq"], cf = tntCF)
+  Histy(tntStat[, "symGC"], cf = tntCF)
+  Histy(tntStat[, "boot"], cf = tntCF)
+  Histy(tntStat[, "jak"], cf = tntCF)
+  Histy(tntStat[, "pois"], cf = tntCF)
+  
+  iqCF <- rowSums(concord) + rowSums(iqStat)
+  Histy(concord[, "cluster"], cf = iqCF)
+  Histy(concord[, "mutual"], cf = iqCF)
+  Histy(concord[, "quartet"], cf = iqCF)
+  Histy(iqStat[, "lbp"], cf = iqCF)
+  Histy(iqStat[, "alrt"], cf = iqCF)
+  Histy(iqStat[, "abayes"], cf = iqCF)
+  
+  dev.off()
+}
 
 
 
