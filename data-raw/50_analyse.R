@@ -358,8 +358,9 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 }
 
 {
-  cairo_pdf("../char-concord/Fig 3 - edge concordance.pdf", 5.4, 8.4)
+  cairo_pdf("../char-concord/Fig 2 - edge concordance.pdf", 5.4, 8.4)
   par(mar = c(1.6, 1, 3, 1), font.main = 1, cex.main = 0.9)
+  yAdj <- -4
   layout(rbind(1:3,
                c(4:5, 0),
                rep(0, 3),
@@ -372,7 +373,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
          heights = c(1, 1, 1/5, 1, 1, 1/5, 1, 1, 1))
   mlCF <- rowSums(concord) + postProb + iqStat[, "ufb"]
   Histy(concord[, "cluster"], cf = mlCF)
-  Panel("a")
+  Panel("a)", 0, yAdj)
   # Histy(concord[, "clusterNorm"], cf = postProb) # rubbish
   Histy(concord[, "mutual"], cf = mlCF)
   Histy(concord[, "quartet"], cf = mlCF)
@@ -384,7 +385,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   
   iqCF <- rowSums(concord) + rowSums(iqStat)
   Histy(concord[, "cluster"], cf = iqCF)
-  Panel("b")
+  Panel("b)", 0, yAdj)
   Histy(concord[, "mutual"], cf = iqCF)
   Histy(concord[, "quartet"], cf = iqCF)
   Histy(iqStat[, "lbp"], cf = iqCF)
@@ -393,7 +394,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   
   tntCF <- rowSums(concord) + rowSums(tntStat) + bremer
   Histy(concord[, "cluster"], cf = tntCF)
-  Panel("c")
+  Panel("c)", 0, yAdj)
   Histy(concord[, "mutual"], cf = tntCF)
   Histy(concord[, "quartet"], cf = tntCF)
   Histy(tntStat[, "jak"], cf = tntCF)
