@@ -278,8 +278,10 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   outcomes <- factor(partCorrect[entries], levels = c("FALSE", "TRUE"),
                      ordered = TRUE)
   var <- var[entries]
-  brks <- if (even) {
+  brks <- if (isTRUE(even)) {
     quantile(var, seq(0, 1, length.out = breaks))
+  } else if (even == "log") {
+    quantile(var, log(1:breaks) / log(breaks))
   } else {
     seq(min(var), max(var), length.out = breaks)
   }
@@ -377,8 +379,8 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   # Histy(concord[, "clusterNorm"], cf = postProb) # rubbish
   Histy(concord[, "mutual"], cf = mlCF)
   Histy(concord[, "quartet"], cf = mlCF)
-  Histy(postProb, cf = mlCF)
-  Histy(iqStat[, "ufb"], cf = mlCF)
+  Histy(postProb, cf = mlCF, even = "log", breaks = 24)
+  Histy(iqStat[, "ufb"], cf = mlCF, even = "log")
   # Histy(concord[, "shared"], cf = postProb)
   # Histy(concord[, "phylo"], cf = postProb)
   #Histy(splitH, cf = postProb)
