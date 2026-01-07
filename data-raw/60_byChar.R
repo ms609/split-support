@@ -162,7 +162,7 @@ resolution <- apply(nona, 2, function(x) length(unique(x)))
 resolution[rev(order(resolution)[-1])]
 
 {
-  pdf("../char-concord/Fig 4 - character concordance.pdf", 8.4, 2.4)
+  pdf("../char-concord/Fig 3 - character concordance.pdf", 8.4, 2.4)
   par(mfrow = c(1, 6), mar = c(3.7, 5.2, 0.2, 0.2), cex = 0.6,
       oma = c(1, 0, 0, 0))
   
