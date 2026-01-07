@@ -141,7 +141,8 @@ nona <- consDF |> na.omit()
 
 CIPlot <- function(x, calcTau = FALSE) {
   boxplot(consDF[[x]] ~ consDF$cat,# notch = TRUE,
-          frame.plot = FALSE, las = 3,
+          frame.plot = FALSE, las = 3, range = 1,
+          pch = 16, cex = 0.2,
           ylab = c(ci = "Consistency index",
                    ri = "Retention index",
                    rhi = "1 - Relative homoplasy index",
