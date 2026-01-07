@@ -284,7 +284,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
     seq(min(var), max(var), length.out = breaks)
   }
   brks <- unique(brks)
-  pattern <- if (max(brks) > 2) "%.0f" else "%.2f"
+  pattern <- if (max(brks) > 2) "%.0f" else "%.3f"
   binLabels <- sprintf(pattern, brks[-length(brks)])
   bins <- cut(var, breaks = brks)
   
