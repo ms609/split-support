@@ -143,25 +143,18 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
       file.remove(ConcFile(sim, aln))
       stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
     }
-    
-    ## TEMPORARY
-    # if (file.info(concCache)$mtime < "2025-12-09 15:00:00 GMT") {
-    #   conc[, "cluster"] <- ClusteringConcordance(partitions, dataset,
-    #                                              normalize = FALSE)
-    #   conc <- cbind(conc[, 1:5], "clusterNorm" = ClusteringConcordance(
-    #     partitions, dataset, normalize = TRUE))
-    #   write.table(conc, concCache)
-    # }
-    ## END TEMPORARY
-    
   } else {
-    cAll <- ClusteringConcordance(partitions, dataset, normalize = FALSE,
-                                  return = "all")
+    cAll <- ClusteringConcordance(
+      partitions,
+      dataset,
+      normalize = FALSE,
+      return = "all"
+    )
     bestSums <- rowSums(cAll["hBest", , ])
     .Rezero <- function(value, zero) {
       (value - zero) / (1 - zero)
     }
-    
+
     conc <- cbind(
       quartet = QuartetConcordance(partitions, dataset),
       cluster = rowSums(cAll["mi", , ]) / bestSums, # = ClustConc(norm = FALSE)
@@ -315,13 +308,18 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
     title)
   
   tab <- table(bins, outcomes)
-  #tab <- tab[rowSums(tab) > 0, , drop = FALSE]
-  #dimnames(tab)[[2]] <- rep("", dim(tab)[[2]])
-  spTab <- spineplot(tab, main = title, col = col,
-                     axes = FALSE,
-                     xaxlabels = "", yaxlabels = "", xlab = "", ylab = "",
-                     border = NA)
-  
+  spTab <- spineplot(
+    tab,
+    main = title,
+    col = col,
+    axes = FALSE,
+    xaxlabels = "",
+    yaxlabels = "",
+    xlab = "",
+    ylab = "",
+    border = NA
+  )
+
   binCounts <- rowSums(tab)
   #binLabels <- binLabels[binCounts > 0]
   widths <- binCounts / sum(binCounts)
@@ -333,30 +331,34 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   plotWidth <- usr[[2]] - usr[[1]]
   # Map our 0-1 centres to the actual usr coordinates
   x <- usr[[1]] + (centres * plotWidth)
+
+  text(
+    x = x,
+    y = -0.06,
+    labels = binLabels,
+    srt = 90,
+    adj = 1,
+    xpd = NA,
+    cex = 0.8
+  )
+
   
-  text(x = x,
-       y = -0.06,
-       labels = binLabels,
-       srt = 90,
-       adj = 1,
-       xpd = NA,
-       cex = 0.8)
-  
-  
-  roc <- pROC::roc(predictor = var, response = as.numeric(outcomes),
-                   quiet = TRUE)
-  #sD <- SomersD(var, partQual[entries])
+roc <- pROC::roc(predictor = var, response = as.numeric(outcomes), quiet = TRUE)
   cIdx <- CIndex(var, partQual[entries])
-  
+
   message("n = ", sum(entries), ": ", title)
-  # mtext(bquote(
-  #   ROC-AUC == .(sprintf("%.3f", roc$auc)) * ";" ~
-  #   D == .(sprintf("%.3f", sD$estimate))
-  # ), 3, line = -0.3, cex = 0.6)
-  mtext(paste0("ROC-AUC = ", sprintf("%.2f", roc$auc), "; ",
-               "C-index = ", sprintf("%.2f", cIdx$estimate)),
-               #"D = ", sprintf("%.2f", sD$estimate)),
-        3, cex = 0.6)
+
+  mtext(
+    paste0(
+      "ROC-AUC = ",
+      sprintf("%.2f", roc$auc),
+      "; ",
+      "C-index = ",
+      sprintf("%.2f", cIdx$estimate)
+    ),
+    3,
+    cex = 0.6
+  )
 }
 
 {
@@ -376,14 +378,10 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   mlCF <- rowSums(concord) + postProb + iqStat[, "ufb"]
   Histy(concord[, "cluster"], cf = mlCF)
   Panel("a)", 0, yAdj)
-  # Histy(concord[, "clusterNorm"], cf = postProb) # rubbish
   Histy(concord[, "mutual"], cf = mlCF)
   Histy(concord[, "quartet"], cf = mlCF)
   Histy(postProb, cf = mlCF, even = "log", breaks = 24)
   Histy(iqStat[, "ufb"], cf = mlCF, even = "log")
-  # Histy(concord[, "shared"], cf = postProb)
-  # Histy(concord[, "phylo"], cf = postProb)
-  #Histy(splitH, cf = postProb)
   
   iqCF <- rowSums(concord) + rowSums(iqStat)
   Histy(concord[, "cluster"], cf = iqCF)
@@ -408,38 +406,3 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   
   dev.off()
 }
-
-
-
-
-
-
-
-# 
-# 
-# allCF <- rowSums(concord) + postProb + rowSums(tntStat) + rowSums(iqStat) + bremer
-# par(mfrow = c(5, 3), mar = rep(2, 4))
-# Histy(postProb, cf = allCF)
-# Histy(bremer, cf = allCF)
-# Histy(tntStat[, "symFq"], cf = allCF)
-# Histy(tntStat[, "symGC"], cf = allCF)
-# Histy(tntStat[, "boot"], cf = allCF)
-# Histy(tntStat[, "jak"], cf = allCF)
-# Histy(tntStat[, "pois"], cf = allCF)
-# 
-# Histy(iqStat[, "ufb"], cf = allCF)
-# Histy(iqStat[, "lbp"], cf = allCF)
-# Histy(iqStat[, "alrt"], cf = allCF)
-# Histy(iqStat[, "abayes"], cf = allCF)
-# 
-# Histy(concord[, "cluster"], cf = allCF)
-# # Histy(concord[, "clusterNorm"], cf = allCF)
-# Histy(concord[, "quartet"], cf = allCF)
-# Histy(concord[, "mutual"], cf = allCF)
-# # Histy(concord[, "shared"], cf = allCF)
-# # Histy(concord[, "phylo"], cf = allCF)
-# 
-# 
-# # The lower the Brier score is for a set of predictions,
-# # the better the predictions are calibrated.
-# # mclust::BrierScore(cbind(1 - postProb, postProb), partCorrect)
