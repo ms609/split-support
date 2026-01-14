@@ -33,7 +33,14 @@ mbExec <- "C:/Programs/Phylogeny/MrBayes/bin/mb.3.2.7-win64.exe"
 iqExec <- "C:/Programs/Phylogeny/iqtree-3.0.1-Windows/bin/iqtree3.exe"
 
 # Username and server ID for HPC login
-hpcServer <- "pjjg18@hamilton8.dur.ac.uk"
+# Ideally, set a system environment variable, perhaps by running
+# file.edit("~/.Renviron")
+# and adding a line
+# sshLogin = username@hpc.institution.ac.uk
+# Then restart the R environment
+hpcServer <- Sys.getenv("sshLogin")
+# Alternatively, set directly with 
+# hpcServer <- "username@hpc.institution.ac.uk"
 
 ### Location of output files ###
 iqDir <- "data-raw/iqtree/"
