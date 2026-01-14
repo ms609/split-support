@@ -144,6 +144,9 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
       stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
     }
   } else {
+    # For efficiency, calculate the complete concordance statistics once and
+    # derive the associated measures below.
+    # Output matches that produced via ClusteringConcordance(normalize = T/F)
     cAll <- ClusteringConcordance(
       partitions,
       dataset,
@@ -160,6 +163,7 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
       cluster = rowSums(cAll["mi", , ]) / bestSums, # = ClustConc(norm = FALSE)
       phylo = PhylogeneticConcordance(partitions, dataset),
       mutual = MutualClusteringConcordance(partitions, dataset),
+      # Not used in this study:
       shared = SharedPhylogeneticConcordance(partitions, dataset),
       clusterNorm = .Rezero(
         rowSums(cAll["mi", , ]) / bestSums,
@@ -179,6 +183,7 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   } else {
     h <- cbind(
       clustering = TreeDist::ClusteringEntropy(partitions, sum = FALSE),
+      # Not used in this study:
       splitwise = TreeDist::SplitwiseInfo(partitions, sum = FALSE)
     )
     write.table(h, hCache)
@@ -210,7 +215,7 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   
 }; cli::cli_progress_done()
 
-
+# Reformat lists into vectors/matrices
 partCorrect <- do.call(c, partCorrectList)
 partQual <- do.call(c, partQualList)
 postProb <- do.call(c, postProbList)
@@ -223,13 +228,12 @@ iqStat <- do.call(rbind, iqStatList)
 colnames(tntStat) <- tntStats
 colnames(iqStat) <- iqStats
 
-save.image("gotThisFar.RData")
-
 common <- rowSums(is.na(concord)) == 0 &
   rowSums(is.na(tntStat)) == 0 &
   !is.na(bremer) &
   rowSums(is.na(iqStat)) == 0
 
+# Arrange in data.frame to allow subsequent filtering and analysis
 allDat <- data.frame(
   occurs = partCorrect,
   partQual,
@@ -242,6 +246,7 @@ allDat <- data.frame(
 
 dat <- data.frame(occurs = partCorrect, partQual, postProb, concord) |> na.omit()
 
+# Compute Somers' D, from which the C-index may be derived
 SomersD <- function(score, target) {
   # C index = (Dxy + 1) / 2
   fit <- Hmisc::rcorr.cens(score, target)
@@ -253,6 +258,7 @@ SomersD <- function(score, target) {
   ci  <- est + c(-1, 1) * 1.96 * se
   list(estimate = est, ci95 = ci)
 }
+# Derive the C-index from Somers' D
 CIndex <- function(score, target) {
   lapply(SomersD(score, target), function(x) (x + 1) / 2)
 }
@@ -356,6 +362,7 @@ roc <- pROC::roc(predictor = var, response = as.numeric(outcomes), quiet = TRUE)
   )
 }
 
+# Produce figure as PDF
 {
   cairo_pdf("Fig 2 - edge concordance.pdf", 5.4, 8.4)
   par(mar = c(1.6, 1, 3, 1), font.main = 1, cex.main = 0.9)
