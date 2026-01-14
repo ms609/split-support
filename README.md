@@ -8,6 +8,11 @@ Analyses and analytical output are contained within the `data-raw` directory.
 
 To reproduce the simulation workflow, execute the `.R` scripts in numerical sequence.
 
+> First ensure that you have installed a current version of TreeSearch:
+> `packageVersion("TreeSearch")` should return at least `1.8.0`.
+> 
+> To install the development version of the package, run `devtools::install_github("ms609/TreeSearch")`
+
 
 ### Configuration and simulation
 
