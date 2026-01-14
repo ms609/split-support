@@ -17,8 +17,12 @@ To reproduce the simulation workflow, execute the `.R` scripts in numerical sequ
     [IQ-TREE](https://iqtree.github.io/#download).
   - Your HPC login credentials.
 
+- `10_simluate.R`: Simulates alignments using six rate categories drawn from a discretized gamma distribution.
+  Outputs:
+    - `reference-gam.tre`: Reference topology used for simulation, in newick format;
+    - `alignments/gam###.nex`: Simulated alignment in NEXUS format; `###` denotes replicate ID.
 
-
+- `20_
 
 ## References
 
