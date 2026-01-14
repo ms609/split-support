@@ -27,28 +27,28 @@ iqStats <- c("alrt", "lbp", "abayes", "ufb") # .iqtree output file gives order
 
 for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   aln <- alnIDs[[i]]
-  
+
   # Load MrBayes partitions
   parts <- read.table(MBFile(sim, aln, "parts"), skip = 2 + nTip)
   partitions <- setNames(as.Splits(parts[, 2], tips), paste0("mb", parts[, 1]))
-  
+
   # Load TNT partitions
   tntFile <- TNTFile(sim, aln, "ew")
   if (!file.exists(tntFile)) {
     warning("No TNT results available for ", aln, ".")
-    next;
+    next
   }
   tntTree <- suppressMessages(ReadTntTree(tntFile, tipLabels = tips))
   if (!inherits(tntTree, "multiPhylo")) {
     warning("Only one tree found in file ", aln, "; missing TNT output.")
-    next;
+    next
   }
   if (!all.equal(tntTree[[1]], tntTree[[2]])) {
     # Trees may differ in resolution: partitions with 0 Bremer support will
     # be collapsed in tntTree[[1]].
     if (any(!as.Splits(tntTree[[1]]) %in% as.Splits(tntTree[[2]]))) {
       warning("Trees don't match in ", aln, ". Check TNT output.")
-      next;
+      next
     }
   }
   tntParts <- as.Splits(tntTree[[2]])
@@ -60,7 +60,7 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
       setNames(tntParts[[tntOnly]], paste0("tnt", seq_len(sum(tntOnly))))
     )
   }
-  
+
   # Load IQ-tree partitions
   iqTree <- read.tree(IQFile(sim, aln, ".treefile"))
   iqParts <- as.Splits(iqTree)
@@ -74,11 +74,16 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   ufbLines <- readLines(IQFile(sim, aln, ".splits.nex"))[-seq_len(nTip + 13)]
   ufbLines <- ufbLines[seq_len(which.max(ufbLines == ";") - 1)]
   ufbLines <- do.call(rbind, strsplit(trimws(ufbLines), "\t"))
-  ufbParts <- as.Splits(t(vapply(
-    strsplit(trimws(gsub(",", "", fixed = TRUE, ufbLines[, 2])), " "),
-    function(a) {
-      tabulate(as.numeric(a), nTip) == 1
-    }, logical(nTip))), tipLabels = tips)
+  ufbParts <- as.Splits(
+    t(vapply(
+      strsplit(trimws(gsub(",", "", fixed = TRUE, ufbLines[, 2])), " "),
+      function(a) {
+        tabulate(as.numeric(a), nTip) == 1
+      },
+      logical(nTip)
+    )),
+    tipLabels = tips
+  )
   trivial <- TrivialSplits(ufbParts)
   ufbVals <- as.numeric(ufbLines[!trivial, 1])
   ufbParts <- ufbParts[[!trivial]]
@@ -89,53 +94,72 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
       setNames(ufbParts[[ufbOnly]], paste0("ufb", seq_len(sum(ufbOnly))))
     )
   }
-  
+
   # Once all partitions are loaded, label where possible
-  
+
   # Populate TNT supports
   brem <- rep(NA_real_, length(partitions))
   partId2 <- match(as.Splits(tntTree[[2]]), partitions)
   brem[partId2] <- 0
-  partBrem <- tntTree[[1]]$node.label[as.numeric(names(as.Splits(tntTree[[1]]))) - NTip(tntTree[[1]])]
+  partBrem <- tntTree[[1]]$node.label[
+    as.numeric(names(as.Splits(tntTree[[1]]))) - NTip(tntTree[[1]])
+  ]
   brem[match(as.Splits(tntTree[[1]]), partitions)] <- as.numeric(partBrem)
-  
+
   tags <- strsplit(tntTree[[2]]$node.label, "/")
-  partTags <- tags[as.numeric(names(as.Splits(tntTree[[2]]))) - NTip(tntTree[[2]])]
-  tntTags <- matrix(NA_real_, length(partitions), length(tntStats),
-                    dimnames = list(NULL, tntStats))
-  tntTags[partId2, ] <- t(vapply(partTags, function(tag) {
-    x <- gsub("[", "-", fixed = TRUE, gsub("]", "", fixed = TRUE, tag))
-    x[x == "?"] <- NA_real_
-    x[x == "???"] <- Inf
-    as.numeric(x)
-  }, numeric(length(tntStats))))
-  
-  
+  partTags <- tags[
+    as.numeric(names(as.Splits(tntTree[[2]]))) - NTip(tntTree[[2]])
+  ]
+  tntTags <- matrix(
+    NA_real_,
+    length(partitions),
+    length(tntStats),
+    dimnames = list(NULL, tntStats)
+  )
+  tntTags[partId2, ] <- t(vapply(
+    partTags,
+    function(tag) {
+      x <- gsub("[", "-", fixed = TRUE, gsub("]", "", fixed = TRUE, tag))
+      x[x == "?"] <- NA_real_
+      x[x == "???"] <- Inf
+      as.numeric(x)
+    },
+    numeric(length(tntStats))
+  ))
+
   # Populate IQ-tree supports
   iqMatch <- match(iqParts, partitions)
   tags <- strsplit(iqTree[["node.label"]], "/")
   partTags <- tags[as.numeric(names(iqParts)) - NTip(iqTree)]
-  iqTags <- matrix(NA_real_, length(partitions), length(iqStats),
-                   dimnames = list(NULL, iqStats))
+  iqTags <- matrix(
+    NA_real_,
+    length(partitions),
+    length(iqStats),
+    dimnames = list(NULL, iqStats)
+  )
   iqTags[iqMatch, ] <- t(vapply(partTags, as.numeric, numeric(length(iqStats))))
-  
-  
+
   # Populate Ultra-Fast bootstrap supports for partitions not in consensus
   ufbMatch <- match(ufbParts, partitions)
   iqTags[ufbMatch, "ufb"] <- ufbVals
-  
-  
+
   # Populate posterior probabilities
-  pp <- read.table(MBFile(sim, aln, "tstat"), skip = 1,
-                   header = TRUE, comment.char = "")
+  pp <- read.table(
+    MBFile(sim, aln, "tstat"),
+    skip = 1,
+    header = TRUE,
+    comment.char = ""
+  )
   pp <- setNames(pp[, "Probability..s."], pp[, "ID"])
-  
-  
+
   # Calculate concordances
-  dataset <- MatrixToPhyDat(matrix(unlist(read.nexus.data(DataFile(sim, aln))), 
-                                   nrow = nTip, byrow = TRUE,
-                                   dimnames = list(tips, NULL)))
-  
+  dataset <- MatrixToPhyDat(matrix(
+    unlist(read.nexus.data(DataFile(sim, aln))),
+    nrow = nTip,
+    byrow = TRUE,
+    dimnames = list(tips, NULL)
+  ))
+
   concCache <- ConcFile(sim, aln)
   if (file.exists(concCache)) {
     conc <- as.matrix(read.table(concCache))
@@ -143,7 +167,7 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
       file.remove(ConcFile(sim, aln))
       stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
     }
-    
+
     ## TEMPORARY
     # if (file.info(concCache)$mtime < "2025-12-09 15:00:00 GMT") {
     #   conc[, "cluster"] <- ClusteringConcordance(partitions, dataset,
@@ -153,20 +177,27 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
     #   write.table(conc, concCache)
     # }
     ## END TEMPORARY
-    
   } else {
-    cAll <- ClusteringConcordance(partitions, dataset, normalize = FALSE,
-                                  return = "all")
+    # For efficiency, calculate the complete concordance statistics once and
+    # derive the associated measures below.
+    # Output matches that produced via ClusteringConcordance(normalize = T/F)
+    cAll <- ClusteringConcordance(
+      partitions,
+      dataset,
+      normalize = FALSE,
+      return = "all"
+    )
     bestSums <- rowSums(cAll["hBest", , ])
     .Rezero <- function(value, zero) {
       (value - zero) / (1 - zero)
     }
-    
+
     conc <- cbind(
       quartet = QuartetConcordance(partitions, dataset),
       cluster = rowSums(cAll["mi", , ]) / bestSums, # = ClustConc(norm = FALSE)
       phylo = PhylogeneticConcordance(partitions, dataset),
       mutual = MutualClusteringConcordance(partitions, dataset),
+      # Not used in this study:
       shared = SharedPhylogeneticConcordance(partitions, dataset),
       clusterNorm = .Rezero(
         rowSums(cAll["mi", , ]) / bestSums,
@@ -175,7 +206,7 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
     )
     write.table(conc, concCache)
   }
-  
+
   hCache <- EntropyFile(sim, aln)
   if (file.exists(hCache)) {
     h <- as.matrix(read.table(hCache))
@@ -186,14 +217,15 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   } else {
     h <- cbind(
       clustering = TreeDist::ClusteringEntropy(partitions, sum = FALSE),
+      # Not used in this study:
       splitwise = TreeDist::SplitwiseInfo(partitions, sum = FALSE)
     )
     write.table(h, hCache)
   }
-  
+
   partInRef <- partitions %in% refSplits
   partCorrectList[[i]] <- partInRef
-  
+
   qCache <- PartQFile(sim, aln)
   if (file.exists(qCache)) {
     partQ <- scan(qCache, quiet = TRUE)
@@ -201,23 +233,29 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
     partQ <- rep(1, length(partInRef))
     partQ[!partInRef] <- vapply(
       seq_along(partitions)[!partInRef],
-      function(i) TreeDist::MutualClusteringInfo(partitions[[i]], refSplits,
-                                                 normalize = h[, "clustering"][[i]]),
-      double(1))
+      function(i) {
+        TreeDist::MutualClusteringInfo(
+          partitions[[i]],
+          refSplits,
+          normalize = h[, "clustering"][[i]]
+        )
+      },
+      double(1)
+    )
     write(partQ, qCache)
   }
   partQualList[[i]] <- partQ
-  
+
   postProbList[[i]] <- c(pp, rep(0, sum(tntOnly, iqOnly, ufbOnly)))
   concordList[[i]] <- conc
   splitHList[[i]] <- h
   bremerList[[i]] <- brem
   tntStatList[[i]] <- tntTags
   iqStatList[[i]] <- iqTags
-  
-}; cli::cli_progress_done()
+}
+cli::cli_progress_done()
 
-
+# Reformat lists into vectors/matrices
 partCorrect <- do.call(c, partCorrectList)
 partQual <- do.call(c, partQualList)
 postProb <- do.call(c, postProbList)
@@ -230,13 +268,12 @@ iqStat <- do.call(rbind, iqStatList)
 colnames(tntStat) <- tntStats
 colnames(iqStat) <- iqStats
 
-save.image("gotThisFar.RData")
-
 common <- rowSums(is.na(concord)) == 0 &
   rowSums(is.na(tntStat)) == 0 &
   !is.na(bremer) &
   rowSums(is.na(iqStat)) == 0
 
+# Arrange in data.frame to allow subsequent filtering and analysis
 allDat <- data.frame(
   occurs = partCorrect,
   partQual,
@@ -247,19 +284,22 @@ allDat <- data.frame(
   concord
 )
 
-dat <- data.frame(occurs = partCorrect, partQual, postProb, concord) |> na.omit()
+dat <- data.frame(occurs = partCorrect, partQual, postProb, concord) |>
+  na.omit()
 
+# Compute Somers' D, from which the C-index may be derived
 SomersD <- function(score, target) {
   # C index = (Dxy + 1) / 2
   fit <- Hmisc::rcorr.cens(score, target)
-  
+
   est <- fit["Dxy"]
   # Standard error for Dxy
-  se  <- fit["S.D."] / sqrt(fit["n"]) 
-  
-  ci  <- est + c(-1, 1) * 1.96 * se
+  se <- fit["S.D."] / sqrt(fit["n"])
+
+  ci <- est + c(-1, 1) * 1.96 * se
   list(estimate = est, ci95 = ci)
 }
+# Derive the C-index from Somers' D
 CIndex <- function(score, target) {
   lapply(SomersD(score, target), function(x) (x + 1) / 2)
 }
@@ -268,10 +308,14 @@ CIndex <- function(score, target) {
 # How well does a measure predict whether a split is in the true tree?
 # We set `cf` to include only splits for which data is available under
 # both `var` and `cf`, to allow a straight comparison.
-Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
+Histy <- function(var, breaks = 16, even = TRUE, cf = var) {
+  # "Mosaic plot"
   entries <- !is.na(var) & !is.na(cf)
-  outcomes <- factor(partCorrect[entries], levels = c("FALSE", "TRUE"),
-                     ordered = TRUE)
+  outcomes <- factor(
+    partCorrect[entries],
+    levels = c("FALSE", "TRUE"),
+    ordered = TRUE
+  )
   var <- var[entries]
   brks <- if (isTRUE(even)) {
     quantile(var, seq(0, 1, length.out = breaks))
@@ -284,7 +328,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   pattern <- if (max(brks) > 2) "%.0f" else "%.3f"
   binLabels <- sprintf(pattern, brks[-length(brks)])
   bins <- cut(var, breaks = brks)
-  
+
   col <- c("TRUE" = "3", "FALSE" = "2")
   if (substr(as.character(match.call()[-1])[[1]], 1, 7) != "concord") {
     col <- adjustcolor(col, alpha.f = 0.5)
@@ -302,21 +346,29 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
     "tntStat[, \"boot\"]" = "TNT bootstrap",
     "tntStat[, \"jak\"]" = "TNT jackknife",
     "tntStat[, \"pois\"]" = "Poisson resampling",
-    
+
     "iqStat[, \"ufb\"]" = "Ultra-fast bootstrap",
     "iqStat[, \"lbp\"]" = "Local bootstrap probabilities",
     "iqStat[, \"alrt\"]" = "Approx. lik. ratio test",
     "iqStat[, \"abayes\"]" = "Approx. Bayes",
-    title)
-  
+    title
+  )
+
   tab <- table(bins, outcomes)
   #tab <- tab[rowSums(tab) > 0, , drop = FALSE]
   #dimnames(tab)[[2]] <- rep("", dim(tab)[[2]])
-  spTab <- spineplot(tab, main = title, col = col,
-                     axes = FALSE,
-                     xaxlabels = "", yaxlabels = "", xlab = "", ylab = "",
-                     border = NA)
-  
+  spTab <- spineplot(
+    tab,
+    main = title,
+    col = col,
+    axes = FALSE,
+    xaxlabels = "",
+    yaxlabels = "",
+    xlab = "",
+    ylab = "",
+    border = NA
+  )
+
   binCounts <- rowSums(tab)
   #binLabels <- binLabels[binCounts > 0]
   widths <- binCounts / sum(binCounts)
@@ -328,46 +380,53 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   plotWidth <- usr[[2]] - usr[[1]]
   # Map our 0-1 centres to the actual usr coordinates
   x <- usr[[1]] + (centres * plotWidth)
-  
-  text(x = x,
-       y = -0.06,
-       labels = binLabels,
-       srt = 90,
-       adj = 1,
-       xpd = NA,
-       cex = 0.8)
-  
-  
-  roc <- pROC::roc(predictor = var, response = as.numeric(outcomes),
-                   quiet = TRUE)
+
+  text(
+    x = x,
+    y = -0.06,
+    labels = binLabels,
+    srt = 90,
+    adj = 1,
+    xpd = NA,
+    cex = 0.8
+  )
+
+  roc <- pROC::roc(
+    predictor = var,
+    response = as.numeric(outcomes),
+    quiet = TRUE
+  )
   #sD <- SomersD(var, partQual[entries])
   cIdx <- CIndex(var, partQual[entries])
-  
+
   message("n = ", sum(entries), ": ", title)
   # mtext(bquote(
   #   ROC-AUC == .(sprintf("%.3f", roc$auc)) * ";" ~
   #   D == .(sprintf("%.3f", sD$estimate))
   # ), 3, line = -0.3, cex = 0.6)
-  mtext(paste0("ROC-AUC = ", sprintf("%.2f", roc$auc), "; ",
-               "C-index = ", sprintf("%.2f", cIdx$estimate)),
-               #"D = ", sprintf("%.2f", sD$estimate)),
-        3, cex = 0.6)
+  mtext(
+    paste0(
+      "ROC-AUC = ",
+      sprintf("%.2f", roc$auc),
+      "; ",
+      "C-index = ",
+      sprintf("%.2f", cIdx$estimate)
+    ),
+    #"D = ", sprintf("%.2f", sD$estimate)),
+    3,
+    cex = 0.6
+  )
 }
 
+# Produce figure as PDF
 {
   cairo_pdf("../char-concord/Fig 2 - edge concordance.pdf", 5.4, 8.4)
   par(mar = c(1.6, 1, 3, 1), font.main = 1, cex.main = 0.9)
   yAdj <- -4
-  layout(rbind(1:3,
-               c(4:5, 0),
-               rep(0, 3),
-               6:8,
-               9:11,
-               rep(0, 3),
-               12:14,
-               15:17,
-               18:20),
-         heights = c(1, 1, 1/5, 1, 1, 1/5, 1, 1, 1))
+  layout(
+    rbind(1:3, c(4:5, 0), rep(0, 3), 6:8, 9:11, rep(0, 3), 12:14, 15:17, 18:20),
+    heights = c(1, 1, 1 / 5, 1, 1, 1 / 5, 1, 1, 1)
+  )
   mlCF <- rowSums(concord) + postProb + iqStat[, "ufb"]
   Histy(concord[, "cluster"], cf = mlCF)
   Panel("a)", 0, yAdj)
@@ -379,7 +438,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   # Histy(concord[, "shared"], cf = postProb)
   # Histy(concord[, "phylo"], cf = postProb)
   #Histy(splitH, cf = postProb)
-  
+
   iqCF <- rowSums(concord) + rowSums(iqStat)
   Histy(concord[, "cluster"], cf = iqCF)
   Panel("b)", 0, yAdj)
@@ -388,7 +447,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   Histy(iqStat[, "lbp"], cf = iqCF)
   Histy(iqStat[, "abayes"], cf = iqCF)
   Histy(iqStat[, "alrt"], cf = iqCF)
-  
+
   tntCF <- rowSums(concord) + rowSums(tntStat) + bremer
   Histy(concord[, "cluster"], cf = tntCF)
   Panel("c)", 0, yAdj)
@@ -400,18 +459,12 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   Histy(tntStat[, "symGC"], cf = tntCF)
   Histy(tntStat[, "pois"], cf = tntCF)
   Histy(bremer, cf = tntCF)
-  
+
   dev.off()
 }
 
-
-
-
-
-
-
-# 
-# 
+#
+#
 # allCF <- rowSums(concord) + postProb + rowSums(tntStat) + rowSums(iqStat) + bremer
 # par(mfrow = c(5, 3), mar = rep(2, 4))
 # Histy(postProb, cf = allCF)
@@ -421,20 +474,20 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 # Histy(tntStat[, "boot"], cf = allCF)
 # Histy(tntStat[, "jak"], cf = allCF)
 # Histy(tntStat[, "pois"], cf = allCF)
-# 
+#
 # Histy(iqStat[, "ufb"], cf = allCF)
 # Histy(iqStat[, "lbp"], cf = allCF)
 # Histy(iqStat[, "alrt"], cf = allCF)
 # Histy(iqStat[, "abayes"], cf = allCF)
-# 
+#
 # Histy(concord[, "cluster"], cf = allCF)
 # # Histy(concord[, "clusterNorm"], cf = allCF)
 # Histy(concord[, "quartet"], cf = allCF)
 # Histy(concord[, "mutual"], cf = allCF)
 # # Histy(concord[, "shared"], cf = allCF)
 # # Histy(concord[, "phylo"], cf = allCF)
-# 
-# 
+#
+#
 # # The lower the Brier score is for a set of predictions,
 # # the better the predictions are calibrated.
 # # mclust::BrierScore(cbind(1 - postProb, postProb), partCorrect)
