@@ -51,7 +51,7 @@ To reproduce the simulation workflow, execute the `.R` scripts in numerical sequ
 
   Outputs: 
   - `gam####.phy.splits.nex`: Split identifiers and support values in NEXUS format.
-  - `gam####.phy.treefile`: Maximum likelihood tree with edge lengths, in Newick format.
+  - `gam####.phy.treefile`: Maximum likelihood tree with edge lengths, in Newick format; each node is labelled with SH-aLRT support (%) / local bootstrap support (%) / aBayes support / ultrafast bootstrap support (%).
 
 - `40_tnt.R`: Conduct parsimony analysis in TNT.
   Inputs: 
