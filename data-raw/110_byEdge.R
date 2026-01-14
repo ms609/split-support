@@ -357,7 +357,7 @@ roc <- pROC::roc(predictor = var, response = as.numeric(outcomes), quiet = TRUE)
 }
 
 {
-  cairo_pdf("../char-concord/Fig 2 - edge concordance.pdf", 5.4, 8.4)
+  cairo_pdf("Fig 2 - edge concordance.pdf", 5.4, 8.4)
   par(mar = c(1.6, 1, 3, 1), font.main = 1, cex.main = 0.9)
   yAdj <- -4
   layout(rbind(1:3,

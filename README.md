@@ -1,12 +1,13 @@
 # Clustering concordance - simulation evaluation
 
 This repository contains the simulation studies employed in Smith (forthcoming).
+Analyses and analytical output are contained within the `data-raw` directory.
 
-Analyses and results are contained within the `data-raw` directory.
+
+## R scripts
 
 To reproduce the simulation workflow, execute the `.R` scripts in numerical sequence.
 
-## R scripts
 
 ### Configuration and simulation
 
@@ -69,8 +70,12 @@ Scripts that process the outputs obtained above to compute and display statistic
 Calculation results are cached on first calculation in the `alignments`, `concordance` and `entropy` subdirectories.
 
 - `110_byEdge.R`: Edgewise character concordance statistics.
+  Outputs:
+  - `Fig 2 - edge concordance.pdf`: Figure 2 from Smith (forthcoming).
 
 - `120_byChar.R`: Characterwise character concordance statistics.
+  Outputs:
+  - `Fig 3 - character concordance.pdf`: Figure 3 from Smith (forthcoming).
 
 
 ## References

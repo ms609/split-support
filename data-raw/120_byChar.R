@@ -139,16 +139,21 @@ resolution <- apply(nona, 2, function(x) length(unique(x)))
 resolution[rev(order(resolution)[-1])]
 
 {
-  pdf("../char-concord/Fig 3 - character concordance.pdf", 8.4, 2.4)
-  par(mfrow = c(1, 6), mar = c(3.7, 5.2, 0.2, 0.2), cex = 0.6,
-      oma = c(1, 0, 0, 0))
-  
-  CIPlot("conc")    # tau ~ -0.6530646
-  CIPlot("qConc")   # tau ~ -0.4571022
-  CIPlot("ci")      # tau ~ -0.7734901
-  CIPlot("ri")      # tau ~ -0.4762535
-  CIPlot("rhi")     # tau ~ -0.5549066
-  CIPlot("rci")     # tau ~ -0.5211873
+  pdf("Fig 3 - character concordance.pdf", 8.4, 2.4)
+  par(
+    mfrow = c(1, 6),
+    mar = c(3.7, 5.2, 0.2, 0.2),
+    cex = 0.6,
+    oma = c(1, 0, 0, 0)
+  )
+
+  # Specify calcTau = TRUE to recalculate tau values.
+  CIPlot("conc") # tau ~ -0.6530646
+  CIPlot("qConc") # tau ~ -0.4571022
+  CIPlot("ci") # tau ~ -0.7734901
+  CIPlot("ri") # tau ~ -0.4762535
+  CIPlot("rhi") # tau ~ -0.5549066
+  CIPlot("rci") # tau ~ -0.5211873
   mtext("Generative rate for character", 1, line = 0, outer = TRUE, cex = 0.6)
   dev.off()
 }
