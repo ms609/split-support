@@ -79,4 +79,3 @@ Goloboff, P.A., Farris, J.S., and Nixon, K.C. (2008) TNT, a free program for phy
 doi:[10.1111/j.1096-0031.2008.00217.x](https://doi.org/10.1111/j.1096-0031.2008.00217.x)
 
 Smith, M.R. (forthcoming). Which characters support which clades? Exploring the distribution of phylogenetic signal using concordant information.
-

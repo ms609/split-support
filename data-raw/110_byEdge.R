@@ -258,11 +258,6 @@ CIndex <- function(score, target) {
 }
 
 
-
-# Platt scaling: logistic regression of occurs ~ score.
-
-# devtools::install_github("bhklab/survcomp") 
-
 # How well does a measure predict whether a split is in the true tree?
 # We set `cf` to include only splits for which data is available under
 # both `var` and `cf`, to allow a straight comparison.
