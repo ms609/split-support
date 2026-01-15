@@ -74,11 +74,11 @@ To reproduce the simulation workflow, execute the `.R` scripts in numerical sequ
 Scripts that process the outputs obtained above to compute and display statistics.
 Calculation results are cached on first calculation in the `alignments`, `concordance` and `entropy` subdirectories.
 
-- `110_byEdge.R`: Edgewise character concordance statistics.
+- `80_byEdge.R`: Edgewise character concordance statistics.
   Outputs:
   - `Fig 2 - edge concordance.pdf`: Figure 2 from Smith (forthcoming).
 
-- `120_byChar.R`: Characterwise character concordance statistics.
+- `90_byChar.R`: Characterwise character concordance statistics.
   Outputs:
   - `Fig 3 - character concordance.pdf`: Figure 3 from Smith (forthcoming).
 
