@@ -1,0 +1,9 @@
+{
+  "permission": {
+    "edit": {
+      "*.md": "allow",
+      "*.R": "allow",
+      "*/.Rbuildignore": "allow"
+    }
+  }
+}
