@@ -408,3 +408,100 @@ roc <- pROC::roc(predictor = var, response = as.numeric(outcomes), quiet = TRUE)
   
   dev.off()
 }
+
+# ============================================================
+# Appendix: NID vs. support metrics (referee request)
+#
+# Plots the normalized clustering information distance (NID)
+# between each inferred edge and the reference tree (x-axis)
+# against each support metric (y-axis), with Spearman rho
+# annotated per panel. Facets are ordered by correlation
+# strength (most negative first), allowing direct comparison
+# of metrics without separate per-dataset analyses.
+# ============================================================
+
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# Human-readable metric labels, in order of interest
+metric_names <- c(
+  cluster  = "Clustering concordance",
+  mutual   = "Mutual clustering concordance",
+  quartet  = "Quartet concordance",
+  postProb = "Posterior probability",
+  ufb      = "Ultra-fast bootstrap",
+  abayes   = "Approx. Bayes",
+  lbp      = "Local bootstrap prob.",
+  alrt     = "Approx. LRT",
+  jak      = "TNT jackknife",
+  boot     = "TNT bootstrap",
+  symFq    = "Symmetric frequency",
+  pois     = "Poisson resampling",
+  bremer   = "Bremer support"
+)
+
+# NID = 1 − partQual (0 for true splits, > 0 for incorrect splits)
+appendix_dat <- allDat |>
+  mutate(nid = 1 - partQual) |>
+  select(occurs, nid, all_of(names(metric_names))) |>
+  pivot_longer(cols      = -c(occurs, nid),
+               names_to  = "metric_id",
+               values_to = "value") |>
+  filter(!is.na(value), !is.na(nid)) |>
+  mutate(metric = metric_names[metric_id])
+
+# Spearman correlations on full data
+nid_cors <- appendix_dat |>
+  group_by(metric) |>
+  summarise(r = cor(nid, value, method = "spearman", use = "complete.obs"),
+            .groups = "drop") |>
+  mutate(label = sprintf("rho == %.2f", r))
+
+# Order facets by correlation strength (most negative first)
+metric_lvls         <- nid_cors$metric[order(nid_cors$r)]
+appendix_dat$metric <- factor(appendix_dat$metric, levels = metric_lvls)
+nid_cors$metric     <- factor(nid_cors$metric,     levels = metric_lvls)
+
+# Stratified sample for scatter (2000 per metric × occurs group)
+set.seed(4917)
+plot_sample <- appendix_dat |>
+  group_by(metric, occurs) |>
+  slice_sample(n = 2000, replace = FALSE) |>
+  ungroup()
+
+# Binned medians for the trend line (40 equal-width bins across [0, 1])
+trend_dat <- appendix_dat |>
+  mutate(nid_bin = floor(nid * 40) / 40 + 0.5 / 40) |>
+  group_by(metric, nid_bin) |>
+  summarise(med = median(value, na.rm = TRUE), .groups = "drop")
+
+# Build plot
+nid_plot <- ggplot(plot_sample, aes(x = nid, y = value)) +
+  geom_point(aes(colour = occurs), alpha = 0.15, size = 0.2, shape = 16) +
+  geom_line(data     = trend_dat,
+            aes(x    = nid_bin, y = med),
+            colour   = "black", linewidth = 0.6) +
+  geom_text(data     = nid_cors,
+            aes(x    = Inf, y = Inf, label = label),
+            hjust    = 1.1, vjust = 1.6, size = 2.6, parse = TRUE) +
+  scale_colour_manual(
+    values = c("TRUE" = "#2166AC", "FALSE" = "#D73027"),
+    labels = c("TRUE" = "In reference tree", "FALSE" = "Not in reference tree"),
+    name   = NULL,
+    guide  = guide_legend(override.aes = list(alpha = 1, size = 2))
+  ) +
+  scale_x_continuous(name   = "Normalized clustering information distance",
+                     limits = c(0, 1), breaks = c(0, 0.5, 1)) +
+  labs(y = "Support value") +
+  facet_wrap(~ metric, scales = "free_y", ncol = 3) +
+  theme_bw(base_size = 9) +
+  theme(legend.position  = "bottom",
+        strip.background = element_blank(),
+        strip.text       = element_text(size = 8),
+        panel.grid.minor = element_blank(),
+        axis.text        = element_text(size = 7))
+
+cairo_pdf("Fig A1 - NID vs support.pdf", width = 8, height = 10)
+print(nid_plot)
+dev.off()
