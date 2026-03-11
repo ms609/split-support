@@ -415,93 +415,107 @@ roc <- pROC::roc(predictor = var, response = as.numeric(outcomes), quiet = TRUE)
 # Plots the normalized clustering information distance (NID)
 # between each inferred edge and the reference tree (x-axis)
 # against each support metric (y-axis), with Spearman rho
-# annotated per panel. Facets are ordered by correlation
-# strength (most negative first), allowing direct comparison
-# of metrics without separate per-dataset analyses.
+# (computed on all observations) annotated per panel.
+# Metrics are ordered as in Fig. 2. Points are coloured by
+# whether the split is in the reference tree (blue) or not
+# (red); trend line shows the binned median across 40
+# equal-width NID bins.
 # ============================================================
 
-library(ggplot2)
-library(dplyr)
-library(tidyr)
-
-# Human-readable metric labels, in order of interest
-metric_names <- c(
-  cluster  = "Clustering concordance",
-  mutual   = "Mutual clustering concordance",
-  quartet  = "Quartet concordance",
-  postProb = "Posterior probability",
-  ufb      = "Ultra-fast bootstrap",
-  abayes   = "Approx. Bayes",
-  lbp      = "Local bootstrap prob.",
-  alrt     = "Approx. LRT",
-  jak      = "TNT jackknife",
-  boot     = "TNT bootstrap",
-  symFq    = "Symmetric frequency",
-  pois     = "Poisson resampling",
-  bremer   = "Bremer support"
+# Metrics in the same order as Fig. 2 (unique, first appearance)
+.fig_a1_metrics <- list(
+  list(values = allDat$cluster,      name = "Clustering concordance"),
+  list(values = allDat$mutual,       name = "Mutual clustering concordance"),
+  list(values = allDat$quartet,      name = "Quartet concordance"),
+  list(values = postProb,            name = "Posterior probability"),
+  list(values = iqStat[, "ufb"],     name = "Ultra-fast bootstrap"),
+  list(values = iqStat[, "lbp"],     name = "Local bootstrap prob."),
+  list(values = iqStat[, "abayes"],  name = "Approx. Bayes"),
+  list(values = iqStat[, "alrt"],    name = "Approx. LRT"),
+  list(values = tntStat[, "jak"],    name = "TNT jackknife"),
+  list(values = tntStat[, "boot"],   name = "TNT bootstrap"),
+  list(values = tntStat[, "symFq"],  name = "Symmetric frequency"),
+  list(values = tntStat[, "symGC"],  name = "Groups pres / cont"),
+  list(values = tntStat[, "pois"],   name = "Poisson resampling"),
+  list(values = bremer,              name = "Bremer support")
 )
 
-# NID = 1 − partQual (0 for true splits, > 0 for incorrect splits)
-appendix_dat <- allDat |>
-  mutate(nid = 1 - partQual) |>
-  select(occurs, nid, all_of(names(metric_names))) |>
-  pivot_longer(cols      = -c(occurs, nid),
-               names_to  = "metric_id",
-               values_to = "value") |>
-  filter(!is.na(value), !is.na(nid)) |>
-  mutate(metric = metric_names[metric_id])
+.nid <- 1 - partQual  # 0 = true split; > 0 = incorrect split
 
-# Spearman correlations on full data
-nid_cors <- appendix_dat |>
-  group_by(metric) |>
-  summarise(r = cor(nid, value, method = "spearman", use = "complete.obs"),
-            .groups = "drop") |>
-  mutate(label = sprintf("rho == %.2f", r))
+# Plot one panel: NID (x) vs. a support metric (y)
+.NidPanel <- function(values, name, col_true = "#2166AC", col_false = "#D73027",
+                      n_sample = 2000) {
+  ok      <- !is.na(values) & !is.na(.nid)
+  x       <- .nid[ok]
+  y       <- values[ok]
+  correct <- partCorrect[ok]
 
-# Order facets by correlation strength (most negative first)
-metric_lvls         <- nid_cors$metric[order(nid_cors$r)]
-appendix_dat$metric <- factor(appendix_dat$metric, levels = metric_lvls)
-nid_cors$metric     <- factor(nid_cors$metric,     levels = metric_lvls)
+  # Spearman correlation on all observations
+  rho <- cor(x, y, method = "spearman")
 
-# Stratified sample for scatter (2000 per metric × occurs group)
+  # Binned median trend line (40 equal-width bins)
+  bin_id  <- floor(x * 40) / 40 + 0.5 / 40
+  bin_med <- tapply(y, bin_id, median, na.rm = TRUE)
+  bin_x   <- as.numeric(names(bin_med))
+
+  # Stratified sample for scatter display
+  idx_t   <- which(correct)
+  idx_f   <- which(!correct)
+  keep    <- c(sample(idx_t, min(n_sample, length(idx_t))),
+               sample(idx_f, min(n_sample, length(idx_f))))
+  col_pts <- adjustcolor(ifelse(correct[keep], col_true, col_false),
+                         alpha.f = 0.25)
+
+  plot(x[keep], y[keep],
+       pch        = 16,
+       cex        = 0.3,
+       col        = col_pts,
+       xlim       = c(0, 1),
+       xlab       = "",
+       ylab       = "",
+       main       = name,
+       frame.plot = FALSE)
+
+  lines(bin_x, bin_med, lwd = 1.5)
+
+  # Spearman rho annotation (top-right, inside panel)
+  usr <- par("usr")
+  text(usr[2], usr[4],
+       labels = bquote(rho == .(sprintf("%.2f", rho))),
+       adj    = c(1.05, 1.4),
+       cex    = 0.7)
+}
+
 set.seed(4917)
-plot_sample <- appendix_dat |>
-  group_by(metric, occurs) |>
-  slice_sample(n = 2000, replace = FALSE) |>
-  ungroup()
+cairo_pdf("Fig A1 - NID vs support.pdf", width = 7, height = 9)
 
-# Binned medians for the trend line (40 equal-width bins across [0, 1])
-trend_dat <- appendix_dat |>
-  mutate(nid_bin = floor(nid * 40) / 40 + 0.5 / 40) |>
-  group_by(metric, nid_bin) |>
-  summarise(med = median(value, na.rm = TRUE), .groups = "drop")
+# 5 rows × 3 cols; last slot used for the legend
+layout(matrix(1:15, nrow = 5, ncol = 3, byrow = TRUE))
+par(mar      = c(2.5, 2.5, 2, 0.5),
+    oma      = c(2,   2,   0, 0),
+    font.main = 1,
+    cex.main  = 0.85,
+    cex.axis  = 0.7,
+    tcl       = -0.3,
+    mgp       = c(2, 0.4, 0))
 
-# Build plot
-nid_plot <- ggplot(plot_sample, aes(x = nid, y = value)) +
-  geom_point(aes(colour = occurs), alpha = 0.15, size = 0.2, shape = 16) +
-  geom_line(data     = trend_dat,
-            aes(x    = nid_bin, y = med),
-            colour   = "black", linewidth = 0.6) +
-  geom_text(data     = nid_cors,
-            aes(x    = Inf, y = Inf, label = label),
-            hjust    = 1.1, vjust = 1.6, size = 2.6, parse = TRUE) +
-  scale_colour_manual(
-    values = c("TRUE" = "#2166AC", "FALSE" = "#D73027"),
-    labels = c("TRUE" = "In reference tree", "FALSE" = "Not in reference tree"),
-    name   = NULL,
-    guide  = guide_legend(override.aes = list(alpha = 1, size = 2))
-  ) +
-  scale_x_continuous(name   = "Normalized clustering information distance",
-                     limits = c(0, 1), breaks = c(0, 0.5, 1)) +
-  labs(y = "Support value") +
-  facet_wrap(~ metric, scales = "free_y", ncol = 3) +
-  theme_bw(base_size = 9) +
-  theme(legend.position  = "bottom",
-        strip.background = element_blank(),
-        strip.text       = element_text(size = 8),
-        panel.grid.minor = element_blank(),
-        axis.text        = element_text(size = 7))
+for (.m in .fig_a1_metrics) .NidPanel(.m$values, .m$name)
 
-cairo_pdf("Fig A1 - NID vs support.pdf", width = 8, height = 10)
-print(nid_plot)
+# Shared axis labels
+mtext("Normalized clustering information distance",
+      side = 1, outer = TRUE, line = 0.5, cex = 0.8)
+mtext("Support value",
+      side = 2, outer = TRUE, line = 0.5, cex = 0.8)
+
+# Legend in the empty 15th slot
+par(mar = c(0, 0, 0, 0))
+plot.new()
+legend("center",
+       legend  = c("In reference tree", "Not in reference tree"),
+       pch     = 16,
+       col     = c("#2166AC", "#D73027"),
+       bty     = "n",
+       cex     = 0.9,
+       pt.cex  = 1.2)
+
 dev.off()
