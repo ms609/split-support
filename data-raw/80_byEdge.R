@@ -317,10 +317,11 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   bins <- cut(var, breaks = brks)
   
   col <- c("TRUE" = "3", "FALSE" = "2")
-  if (substr(as.character(match.call()[-1])[[1]], 1, 7) != "concord") {
+  call <- match.call()
+  if (substr(as.character(call[-1])[[1]], 1, 7) != "concord") {
     col <- adjustcolor(col, alpha.f = 0.5)
   }
-  title <- as.character(match.call()[2])
+  title <- as.character(call[2])
   title <- switch(
     title,
     "postProb" = "Posterior probability",
@@ -340,7 +341,8 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
     "iqStat[, \"alrt\"]" = "Approx. lik. ratio test",
     "iqStat[, \"abayes\"]" = "Approx. Bayes",
     "iqStat[, \"sCF\"]" = "Site concordance factor",
-    title)
+    title
+  )
   
   tab <- table(bins, outcomes)
   spTab <- spineplot(
@@ -377,9 +379,18 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
     cex = 0.8
   )
 
-  
-roc <- pROC::roc(predictor = var, response = as.numeric(outcomes), quiet = TRUE)
-  cIdx <- CIndex(var, partQual[entries])
+  cacheFile <- file.path("data-raw", "roc", 
+                         gsub("[\\[\\] ,\"]", "",
+                              paste(call[-1], collapse = "-")))
+  message(cacheFile)
+  if (file.exists(cacheFile)) {
+    load(cacheFile)
+  } else {
+    roc <- pROC::roc(predictor = var, response = as.numeric(outcomes),
+                     quiet = TRUE)
+    cIdx <- CIndex(var, partQual[entries])
+    save(roc, cIdx, file = cacheFile)
+  }
 
   message("n = ", sum(entries), ": ", title)
 
