@@ -326,6 +326,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
     "postProb" = "Posterior probability",
     "concord[, \"cluster\"]" = "Clustering concordance",
     "concord[, \"quartet\"]" = "Quartet concordance",
+    "concord[, \"wQuartet\"]" = "Weighted quartet conc.",
     "concord[, \"mutual\"]" = "Mutual clustering concordance",
     "bremer" = "Bremer support",
     "tntStat[, \"symFq\"]" = "Symmetric frequency",
@@ -338,6 +339,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
     "iqStat[, \"lbp\"]" = "Local bootstrap probabilities",
     "iqStat[, \"alrt\"]" = "Approx. lik. ratio test",
     "iqStat[, \"abayes\"]" = "Approx. Bayes",
+    "iqStat[, \"sCF\"]" = "Site concordance factor",
     title)
   
   tab <- table(bins, outcomes)
