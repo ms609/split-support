@@ -23,7 +23,7 @@ tntStatList <- vector("list", nAln)
 iqStatList <- vector("list", nAln)
 
 tntStats <- c("symFq", "symGC", "boot", "jak", "pois")
-iqStats <- c("alrt", "lbp", "abayes", "ufb") # .iqtree output file gives order
+iqStats <- c("alrt", "lbp", "abayes", "ufb", "sCF") # .iqtree output file gives order
 
 for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   aln <- alnIDs[[i]]
@@ -62,7 +62,29 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   }
   
   # Load IQ-tree partitions
-  iqTree <- read.tree(IQFile(sim, aln, ".treefile"))
+  iqTreeFile <- IQFile(sim, aln, ".treefile")
+  scfFile <- paste0(iqTreeFile, ".cf.tree")
+  if (!file.exists(scfFile)) {
+    df <- DataFile(sim, aln)
+    dfLines <- readLines(df)
+    dfLines[[5]] <- "FORMAT DATATYPE=DNA;"
+    tmpFile <- paste0(df, ".tmp")
+    file.rename(df, tmpFile)
+    on.exit({
+      if (file.exists(tmpFile)) {
+        unlink(df)
+        file.rename(tmpFile, df)
+      }
+    }, add = TRUE)
+    writeLines(dfLines, df)
+    system2(Sys.getenv("iqtree.exe"),
+            c("-t", iqTreeFile, "-s", df, "--scf 100000", "-nt 4"),
+            stdout = NULL)
+    unlink(df)
+    file.rename(tmpFile, df)
+  }
+
+  iqTree <- read.tree(scfFile)
   iqParts <- as.Splits(iqTree)
   iqOnly <- !iqParts %in% partitions
   if (any(iqOnly)) {
@@ -143,6 +165,15 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
       file.remove(ConcFile(sim, aln))
       stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
     }
+    if (!"wQuartet" %in% colnames(conc)) {
+      conc <- cbind(quartet = QuartetConcordance(partitions, dataset,
+                                                 weight = FALSE),
+                    wQuartet = conc[, 1],
+                    
+                    conc[, -1]
+                    )
+      write.table(conc, concCache)
+    }
   } else {
     # For efficiency, calculate the complete concordance statistics once and
     # derive the associated measures below.
@@ -159,7 +190,8 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
     }
 
     conc <- cbind(
-      quartet = QuartetConcordance(partitions, dataset),
+      quartet = QuartetConcordance(partitions, dataset, weight = FALSE),
+      wQuartet = QuartetConcordance(partitions, dataset),
       cluster = rowSums(cAll["mi", , ]) / bestSums, # = ClustConc(norm = FALSE)
       phylo = PhylogeneticConcordance(partitions, dataset),
       mutual = MutualClusteringConcordance(partitions, dataset),
