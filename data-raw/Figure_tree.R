@@ -1,0 +1,7 @@
+referenceTree <- ape::read.tree(file = "data-raw/reference-gam.tre")
+referenceTree$tip.label <- character(length(referenceTree$tip.label))
+svg("Figure - tree.svg", width = 3.543, height = 2.8)
+par(mar = rep(0, 4))
+plot(referenceTree, tip.color = "white", cex = 1e-5)
+ape::add.scale.bar(7.6, 1)
+dev.off()
