@@ -48,11 +48,16 @@ po/*~
 # Temporary analysis files
 brem.tmp.tre
 refbrem.tmp.tre
+**.nex.tmp
 **.phy.*.gz
 **.phy.mldist
 **.phy.log
 **.phy.ufboot
 **.phy.bionj
+**.treefile.log
+**.treefile.cf.branch
+**.treefile.cf.stat
+**.treefile.cf.tree.nex
 
 # RStudio Connect folder
 rsconnect/
