@@ -274,6 +274,9 @@ hereFor <- paste0(
   ifelse(here[, "iq"], "I", ""))
 table(hereFor)
 
+herePal <- setNames(palette.colors(8),
+                    c("", unique(hereFor)))
+
 common <- rowSums(occurs) == 4
 
 
@@ -507,6 +510,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   x       <- .nid[ok]
   y       <- values[ok]
   correct <- partCorrect[ok]
+  col     <- herePal[hereFor[ok]]
 
   # Spearman correlation on all observations
   rho <- cor(x, y, method = "spearman")
@@ -516,8 +520,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   idx_f   <- which(!correct)
   keep    <- c(sample(idx_t, min(n_sample, length(idx_t))),
                sample(idx_f, min(n_sample, length(idx_f))))
-  col_pts <- adjustcolor(ifelse(correct[keep], col_true, col_false),
-                         alpha.f = 0.25)
+  col_pts <- adjustcolor(col, alpha.f = 0.25)
 
   plot(x[keep], y[keep],
        pch        = 16,
