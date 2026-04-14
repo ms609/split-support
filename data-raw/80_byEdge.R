@@ -511,15 +511,19 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
        pch        = 16,
        cex        = 0.3,
        col        = col_pts,
-       xlim       = c(0, 1),
+       xlim       = range(x, na.rm = TRUE),
        xlab       = "",
        ylab       = "",
        main       = name,
        frame.plot = FALSE)
 
-  fit_gam <- gam(y ~ s(x, bs = "cs")) # bs="cs" is a shrinking cubic spline
-  plot_x  <- seq(0, 1, length.out = 200)
-  plot_y  <- predict(fit_gam, newdata = data.frame(x = plot_x))
+  fit_gam <- gam(y ~ s(x, bs = "cs"),
+                 family = gaussian(link = "log"),
+                 method = "REML"
+                 )
+  plot_x  <- seq(0, max(x), length.out = 200)
+  plot_y  <- predict(fit_gam, newdata = data.frame(x = plot_x),
+                     type = "response")
   lines(plot_x, plot_y, lwd = 2)
   
   # Spearman rho annotation (top-right, inside panel)
@@ -533,8 +537,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 set.seed(4917)
 cairo_pdf("Fig 3 - CID vs support.pdf", width = 7, height = 9)
 
-# 5 rows × 3 cols; last slot used for the legend
-layout(matrix(1:15, nrow = 5, ncol = 3, byrow = TRUE))
+layout(matrix(1:16, nrow = 4, ncol = 4, byrow = TRUE))
 par(mar      = c(2.5, 2.5, 2, 0.5),
     oma      = c(2,   2,   0, 0),
     font.main = 1,
