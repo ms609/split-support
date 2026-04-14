@@ -261,10 +261,13 @@ iqStat <- do.call(rbind, iqStatList)
 colnames(tntStat) <- tntStats
 colnames(iqStat) <- iqStats
 
-common <- rowSums(is.na(concord)) == 0 &
-  rowSums(is.na(tntStat)) == 0 &
-  !is.na(bremer) &
-  rowSums(is.na(iqStat)) == 0
+occurs <- data.frame(
+  conc = rowSums(is.na(concord)) == 0,
+  tnt = rowSums(is.na(tntStat)) == 0,
+  brem = !is.na(bremer),
+  iq = rowSums(is.na(iqStat)) == 0)
+
+common <- rowSums(occurs) == 4
 
 # Arrange in data.frame to allow subsequent filtering and analysis
 allDat <- data.frame(
