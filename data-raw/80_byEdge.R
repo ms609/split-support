@@ -504,8 +504,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 .nid <- 1 - partQual  # 0 = true split; > 0 = incorrect split
 
 # Plot one panel: NID (x) vs. a support metric (y)
-.NidPanel <- function(values, name, col_true = 3, col_false = 2,
-                      n_sample = 2000) {
+.NidPanel <- function(values, name, n_sample = 2000) {
   ok      <- !is.na(values) & !is.na(.nid)
   x       <- .nid[ok]
   y       <- values[ok]
@@ -514,6 +513,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 
   # Spearman correlation on all observations
   rho <- cor(x, y, method = "spearman")
+  all_rho <- cor(.nid[common], values[common], method = "spearman")
 
   # Stratified sample for scatter display
   idx_t   <- which(correct)
@@ -532,11 +532,25 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
        main       = name,
        frame.plot = FALSE)
 
-  fit_gam <- gam(y ~ s(x, bs = "cs"),
+  plot_x  <- seq(0, max(x), length.out = 200)
+  xc <- x[common]
+  
+  gamma <- 2
+  
+  all_gam <- gam(y[common] ~ s(xc, bs = "cs"),
                  family = gaussian(link = "log"),
+                 gamma = gamma,
                  method = "REML"
                  )
-  plot_x  <- seq(0, max(x), length.out = 200)
+  all_y  <- predict(all_gam, newdata = data.frame(xc = plot_x),
+                    type = "response")
+  lines(plot_x, all_y, lwd = 2, col = herePal["CTBI"])
+  
+  fit_gam <- gam(y ~ s(x, bs = "cs"),
+                 family = gaussian(link = "log"),
+                 gamma = gamma,
+                 method = "REML"
+                 )
   plot_y  <- predict(fit_gam, newdata = data.frame(x = plot_x),
                      type = "response")
   lines(plot_x, plot_y, lwd = 2)
@@ -546,6 +560,10 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   text(usr[2], usr[4],
        labels = bquote(rho == .(sprintf("%.2f", rho))),
        adj    = c(1.05, 1.4),
+       cex    = 0.7)
+  text(usr[2], usr[4],
+       labels = bquote(rho[all] == .(sprintf("%.2f", all_rho))),
+       adj    = c(1.05, 2.4),
        cex    = 0.7)
 }
 
