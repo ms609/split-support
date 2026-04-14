@@ -489,7 +489,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 .nid <- 1 - partQual  # 0 = true split; > 0 = incorrect split
 
 # Plot one panel: NID (x) vs. a support metric (y)
-.NidPanel <- function(values, name, col_true = "#2166AC", col_false = "#D73027",
+.NidPanel <- function(values, name, col_true = 3, col_false = 2,
                       n_sample = 2000) {
   ok      <- !is.na(values) & !is.na(.nid)
   x       <- .nid[ok]
@@ -560,7 +560,7 @@ plot.new()
 legend("center",
        legend  = c("In reference tree", "Not in reference tree"),
        pch     = 16,
-       col     = c("#2166AC", "#D73027"),
+       col     = 3:2,
        bty     = "n",
        cex     = 0.9,
        pt.cex  = 1.2)
