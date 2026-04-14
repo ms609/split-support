@@ -261,13 +261,21 @@ iqStat <- do.call(rbind, iqStatList)
 colnames(tntStat) <- tntStats
 colnames(iqStat) <- iqStats
 
-occurs <- data.frame(
+here <- data.frame(
   conc = rowSums(is.na(concord)) == 0,
   tnt = rowSums(is.na(tntStat)) == 0,
   brem = !is.na(bremer),
   iq = rowSums(is.na(iqStat)) == 0)
 
+hereFor <- paste0(
+  ifelse(here[, "conc"], "C", ""),
+  ifelse(here[, "tnt"], "T", ""),
+  ifelse(here[, "brem"], "B", ""),
+  ifelse(here[, "iq"], "I", ""))
+table(hereFor)
+
 common <- rowSums(occurs) == 4
+
 
 # Arrange in data.frame to allow subsequent filtering and analysis
 allDat <- data.frame(
@@ -277,10 +285,11 @@ allDat <- data.frame(
   tntStat,
   iqStat,
   bremer,
-  concord
+  concord,
+  hereFor
 )
 
-dat <- data.frame(occurs = partCorrect, partQual, postProb, concord) |> na.omit()
+dat <- data.frame(occurs = partCorrect, partQual, postProb, concord, hereFor) |> na.omit()
 
 # Compute Somers' D, from which the C-index may be derived
 SomersD <- function(score, target) {
