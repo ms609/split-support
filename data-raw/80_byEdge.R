@@ -570,7 +570,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 set.seed(4917)
 cairo_pdf("Fig 3 - CID vs support.pdf", width = 7, height = 9)
 
-layout(matrix(1:16, nrow = 4, ncol = 4, byrow = TRUE))
+layout(matrix(1:18, nrow = 6, ncol = 3, byrow = TRUE))
 par(mar      = c(2.5, 2.5, 2, 0.5),
     oma      = c(2,   2,   0, 0),
     font.main = 1,
@@ -582,18 +582,20 @@ par(mar      = c(2.5, 2.5, 2, 0.5),
 for (.m in .fig_a1_metrics) .NidPanel(.m$values, .m$name)
 
 # Shared axis labels
-mtext("Normalized clustering information distance",
-      side = 1, outer = TRUE, line = 0.5, cex = 0.8)
-mtext("Support value",
+mtext("Edge support value",
       side = 2, outer = TRUE, line = 0.5, cex = 0.8)
+mtext("Normalized clustering information distance to true tree",
+      side = 1, outer = TRUE, line = 0.5, cex = 0.8)
 
-# Legend in the empty 15th slot
+hereIds <- names(herePal[-1])[c(3, 2, 5, 4, 6, 7, 1)]
+# Legend in the empty slot
 par(mar = c(0, 0, 0, 0))
 plot.new()
 legend("center",
-       legend  = c("In reference tree", "Not in reference tree"),
+       title = "Stats avaialable:",
+       legend  = paste0(hereIds, " (", table(hereFor)[hereIds], ")"),
        pch     = 16,
-       col     = 3:2,
+       col     = herePal[hereIds],
        bty     = "n",
        cex     = 0.9,
        pt.cex  = 1.2)
