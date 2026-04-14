@@ -118,7 +118,8 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
   brem <- rep(NA_real_, length(partitions))
   partId2 <- match(as.Splits(tntTree[[2]]), partitions)
   brem[partId2] <- 0
-  partBrem <- tntTree[[1]]$node.label[as.numeric(names(as.Splits(tntTree[[1]]))) - NTip(tntTree[[1]])]
+  partBrem <- tntTree[[1]]$node.label[
+    as.numeric(names(as.Splits(tntTree[[1]]))) - NTip(tntTree[[1]])]
   brem[match(as.Splits(tntTree[[1]]), partitions)] <- as.numeric(partBrem)
   
   tags <- strsplit(tntTree[[2]]$node.label, "/")
@@ -380,7 +381,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   )
 
   cacheFile <- file.path("data-raw", "roc", 
-                         gsub("[\\[\\] ,\"]", "",
+                         gsub("[ ,\"\\[]|\\]", "",
                               paste(call[-1], collapse = "-")))
   message(cacheFile)
   if (file.exists(cacheFile)) {
@@ -410,7 +411,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 # Produce figure as PDF
 {
   cairo_pdf("Fig 2 - edge concordance.pdf", 5.4, 8.4)
-  par(mar = c(1.6, 1, 3, 1), font.main = 1, cex.main = 0.9)
+  par(mar = c(1.6, 0.8, 3, 0.8), font.main = 1, cex.main = 0.9)
   yAdj <- -4
   layout(rbind(1:3,
                c(4:5, 0),
