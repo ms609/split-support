@@ -428,21 +428,22 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   cairo_pdf("Fig 2 - edge concordance.pdf", 5.4, 8.4)
   par(mar = c(1.6, 0.8, 3, 0.8), font.main = 1, cex.main = 0.9)
   yAdj <- -4
-  layout(rbind(1:3,
-               c(4:5, 0),
-               rep(0, 3),
-               6:8,
-               9:11,
-               rep(0, 3),
-               12:14,
-               15:17,
-               18:20),
+  layout(rbind(1:4,
+               c(0, 5:6, 0),
+               rep(0, 4),
+               7:10,
+               11:14,
+               rep(0, 4),
+               15:18,
+               19:22,
+               c(0, 23:24, 0)),
          heights = c(1, 1, 1/5, 1, 1, 1/5, 1, 1, 1))
   mlCF <- rowSums(concord) + postProb + iqStat[, "ufb"]
   Histy(concord[, "cluster"], cf = mlCF)
   Panel("a)", 0, yAdj)
   Histy(concord[, "mutual"], cf = mlCF)
   Histy(concord[, "quartet"], cf = mlCF)
+  Histy(concord[, "wQuartet"], cf = mlCF)
   Histy(postProb, cf = mlCF, even = "log", breaks = 24)
   Histy(iqStat[, "ufb"], cf = mlCF, even = "log")
   
@@ -451,15 +452,18 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   Panel("b)", 0, yAdj)
   Histy(concord[, "mutual"], cf = iqCF)
   Histy(concord[, "quartet"], cf = iqCF)
+  Histy(concord[, "wQuartet"], cf = iqCF)
   Histy(iqStat[, "lbp"], cf = iqCF)
   Histy(iqStat[, "abayes"], cf = iqCF)
   Histy(iqStat[, "alrt"], cf = iqCF)
+  Histy(iqStat[, "sCF"], cf = iqCF)
   
   tntCF <- rowSums(concord) + rowSums(tntStat) + bremer
   Histy(concord[, "cluster"], cf = tntCF)
   Panel("c)", 0, yAdj)
   Histy(concord[, "mutual"], cf = tntCF)
   Histy(concord[, "quartet"], cf = tntCF)
+  Histy(concord[, "wQuartet"], cf = tntCF)
   Histy(tntStat[, "jak"], cf = tntCF)
   Histy(tntStat[, "boot"], cf = tntCF)
   Histy(tntStat[, "symFq"], cf = tntCF)
@@ -486,13 +490,16 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 # Metrics in the same order as Fig. 2 (unique, first appearance)
 .fig_a1_metrics <- list(
   list(values = allDat$cluster,      name = "Clustering concordance"),
+  list(values = allDat$clusterNorm,  name = "Adj. Clustering conc."),
   list(values = allDat$mutual,       name = "Mutual clustering concordance"),
   list(values = allDat$quartet,      name = "Quartet concordance"),
+  list(values = allDat$wQuartet,     name = "Weighted quartet conc."),
   list(values = postProb,            name = "Posterior probability"),
   list(values = iqStat[, "ufb"],     name = "Ultra-fast bootstrap"),
   list(values = iqStat[, "lbp"],     name = "Local bootstrap prob."),
   list(values = iqStat[, "abayes"],  name = "Approx. Bayes"),
   list(values = iqStat[, "alrt"],    name = "Approx. LRT"),
+  list(values = iqStat[, "sCF"],     name = "Site concordance factor"),
   list(values = tntStat[, "jak"],    name = "TNT jackknife"),
   list(values = tntStat[, "boot"],   name = "TNT bootstrap"),
   list(values = tntStat[, "symFq"],  name = "Symmetric frequency"),
