@@ -410,13 +410,16 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 
   message("n = ", sum(entries), ": ", title)
 
+  rocVal <- as.numeric(pROC::ci.auc(roc))
+  
   mtext(
     paste0(
-      "ROC-AUC = ",
-      sprintf("%.2f", roc$auc),
+      "AUC = ",
+      sprintf("%.2f (%.2f-%.2f)", rocVal[[2]], rocVal[[1]], rocVal[[3]]),
+      #,
       "; ",
-      "C-index = ",
-      sprintf("%.2f", cIdx$estimate)
+      "C = ",
+      sprintf("%.2f (%.2f-%.2f)", cIdx$estimate, cIdx$ci95[[1]], cIdx$ci95[[2]])
     ),
     3,
     cex = 0.6
