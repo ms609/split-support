@@ -414,22 +414,21 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   
   mtext(
     paste0(
+      "C-index = ",
+      sprintf("%.2f", cIdx$estimate),
+      "\n",
       "AUC = ",
-      sprintf("%.2f (%.2f-%.2f)", rocVal[[2]], rocVal[[1]], rocVal[[3]]),
-      #,
-      "; ",
-      "C = ",
-      sprintf("%.2f (%.2f-%.2f)", cIdx$estimate, cIdx$ci95[[1]], cIdx$ci95[[2]])
+      sprintf("%.2f (%.3f\U2013%.3f)", rocVal[[2]], rocVal[[1]], rocVal[[3]])
     ),
     3,
-    cex = 0.6
+    cex = 0.5
   )
 }
 
 # Produce figure as PDF
 {
   cairo_pdf("Fig 2 - edge concordance.pdf", 5.4, 8.4)
-  par(mar = c(1.6, 0.8, 3, 0.8), font.main = 1, cex.main = 0.9)
+  par(mar = c(1.6, 0.8, 4, 0.8), font.main = 1, cex.main = 0.9)
   yAdj <- -4
   layout(rbind(1:4,
                c(0, 5:6, 0),
@@ -493,7 +492,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 # Metrics in the same order as Fig. 2 (unique, first appearance)
 .fig_a1_metrics <- list(
   list(values = allDat$cluster,      name = "Clustering concordance"),
-  list(values = allDat$clusterNorm,  name = "Adj. Clustering conc."),
+  list(values = allDat$clusterNorm,  name = "Adjusted clustering conc."),
   list(values = allDat$mutual,       name = "Mutual clustering concordance"),
   list(values = allDat$quartet,      name = "Quartet concordance"),
   list(values = allDat$wQuartet,     name = "Weighted quartet conc."),
@@ -522,8 +521,17 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   col     <- herePal[hereFor[ok]]
 
   # Spearman correlation on all observations
-  rho <- cor(x, y, method = "spearman")
-  all_rho <- cor(.nid[common], values[common], method = "spearman")
+  .CalcCI <- function(subset, subsample = FALSE) {
+    if (!isFALSE(subsample)) {
+      xx <- sample.int(sum(subset), 100)
+      CIndex(values[subset][xx], partQual[subset][xx])
+    } else {
+      CIndex(values[subset], partQual[subset])
+    }
+  }
+  cidx <- .CalcCI(ok)
+  all_ci <- .CalcCI(common)
+  all_ci_1 <- .CalcCI(common & !partCorrect)
 
   # Stratified sample for scatter display
   idx_t   <- which(correct)
@@ -534,7 +542,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 
   plot(x[keep], y[keep],
        pch        = 16,
-       cex        = 0.3,
+       cex        = 0.4,
        col        = col_pts,
        xlim       = range(x, na.rm = TRUE),
        xlab       = "",
@@ -568,13 +576,17 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   # Spearman rho annotation (top-right, inside panel)
   usr <- par("usr")
   text(usr[2], usr[4],
-       labels = bquote(rho == .(sprintf("%.2f", rho))),
+       labels = sprintf("C-index = %.2f", cidx$estimate),
        adj    = c(1.05, 1.4),
-       cex    = 0.7)
+       cex    = 0.78)
   text(usr[2], usr[4],
-       labels = bquote(rho[all] == .(sprintf("%.2f", all_rho))),
+       labels = bquote(C[CTBI] == .(sprintf("%.2f", all_ci$estimate))),
        adj    = c(1.05, 2.4),
-       cex    = 0.7)
+       cex    = 0.78)
+  text(usr[2], usr[4],
+       labels = bquote(C[CTBI * "'"] == .(sprintf("%.2f", all_ci_1$estimate))),
+       adj    = c(1.05, 3.4),
+       cex    = 0.78)
 }
 
 set.seed(4917)
@@ -602,12 +614,12 @@ hereIds <- names(herePal[-1])[c(3, 2, 5, 4, 6, 7, 1)]
 par(mar = c(0, 0, 0, 0))
 plot.new()
 legend("center",
-       title = "Stats avaialable:",
+       title = "Stats available:",
        legend  = paste0(hereIds, " (", table(hereFor)[hereIds], ")"),
        pch     = 16,
        col     = herePal[hereIds],
        bty     = "n",
-       cex     = 0.9,
+       cex     = 1,
        pt.cex  = 1.2)
 
 dev.off()
