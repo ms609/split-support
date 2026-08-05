@@ -3,9 +3,7 @@
 ## Project Overview
 
 R-based simulation study evaluating character concordance measures and split
-support metrics in phylogenetic inference. Accompanies the paper "Which
-characters support which clades? Exploring the distribution of phylogenetic
-signal using concordant information" (Smith, forthcoming).
+support metrics in phylogenetic inference. Accompanies the paper "Which characters support which clades? Exploring the distribution of phylogenetic signal using mutual information" (Smith, forthcoming, Systematic Biology).
 
 ## Directory Structure
 
