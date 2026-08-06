@@ -35,8 +35,11 @@ concord <- vapply(
         stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
       }
     } else {
-      conc <- ClusteringConcordance(refSplits, dataset, normalize = FALSE,
-                                    return = "char")
+      conc <- ClusteringConcordance(
+        refSplits, dataset,
+        chanceCorrect = FALSE, # Makes no difference for return = "char"
+        return = "char"
+      )
       write(conc, concCache)
     }
     conc
@@ -65,7 +68,11 @@ qConcord <- vapply(
         stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
       }
     } else {
-      conc <- QuartetConcordance(refSplits, dataset, return = "char")
+      # Pinned to the naive quartet currency, matching Fig. 4's `wQuartet`:
+      # TreeSearch now defaults to unit = "nrqs", chanceCorrect = TRUE, which
+      # would silently redefine the values held in the `_chrQ` caches.
+      conc <- QuartetConcordance(refSplits, dataset, return = "char",
+                                 unit = "quartet", chanceCorrect = FALSE)
       write(conc, concCache)
     }
     conc
@@ -77,7 +84,7 @@ consist <- vapply(
   cli::cli_progress_along(seq_len(nAln), "Analysing"),
   function(i) {
     aln <- alnIDs[[i]]
-    
+
     # Calculate concordances
     dataset <- DataFile(sim, aln) |>
       read.nexus.data() |>
@@ -85,7 +92,7 @@ consist <- vapply(
       matrix(nrow = nTip, byrow = TRUE,
              dimnames = list(tips, NULL)) |>
       MatrixToPhyDat()
-    
+
     consCache <- ConcFile(sim, aln, "_cns")
     if (file.exists(consCache)) {
       cons <- do.call(cbind, read.table(consCache))
@@ -134,6 +141,7 @@ CIPlot <- function(x, calcTau = FALSE) {
       ri = "Retention index",
       rhi = "1 - Relative homoplasy index",
       rhiBar = "1 - Relative homoplasy index (mean)",
+      concN = "Normalized clustering concordance",
       conc = "Clustering concordance",
       qConc = "Quartet concordance",
       rci = "Rescaled consistency index"
@@ -148,7 +156,11 @@ CIPlot <- function(x, calcTau = FALSE) {
 }
 
 {
-  pdf("Fig 3 - character concordance.pdf", 8.4, 2.4)
+  # No NRQS panel here: with `return = "char"` the NRQS currency averages over
+  # every split, so it has no ceiling of 1 and is not comparable with the
+  # clustering concordance panel beside it (which is a whole-tree quantity).
+  # The NRQS results are reported per edge, in Figs 2 and A1.
+  pdf("Fig 5 - character concordance.pdf", 8.4, 2.4)
   par(
     mfrow = c(1, 6),
     mar = c(3.7, 5.2, 0.2, 0.2),
@@ -156,12 +168,12 @@ CIPlot <- function(x, calcTau = FALSE) {
     oma = c(1, 0, 0, 0)
   )
 
-  CIPlot("conc", calcTau = TRUE) # tau ~ -0.6530646
-  CIPlot("qConc", calcTau = TRUE) # tau ~ -0.4571022
-  CIPlot("ci", calcTau = TRUE) # tau ~ -0.7734901
-  CIPlot("ri", calcTau = TRUE) # tau ~ -0.4762535
-  CIPlot("rhi", calcTau = TRUE) # tau ~ -0.5549066
-  CIPlot("rci", calcTau = TRUE) # tau ~ -0.5211873
+  CIPlot("conc",  calcTau = FALSE) # tau ~ -0.6530646
+  CIPlot("qConc", calcTau = FALSE) # tau ~ -0.4571022
+  CIPlot("ci",    calcTau = FALSE) # tau ~ -0.7734901
+  CIPlot("ri",    calcTau = FALSE) # tau ~ -0.4762535
+  CIPlot("rhi",   calcTau = FALSE) # tau ~ -0.5549066
+  CIPlot("rci",   calcTau = FALSE) # tau ~ -0.5211873
   mtext("Generative rate for character", 1, line = 0, outer = TRUE, cex = 0.6)
   dev.off()
 }
