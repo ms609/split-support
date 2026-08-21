@@ -76,11 +76,12 @@ Calculation results are cached on first calculation in the `alignments`, `concor
 
 - `80_byEdge.R`: Edgewise character concordance statistics.
   Outputs:
-  - `Fig 2 - edge concordance.pdf`: Figure 2 from Smith (forthcoming).
+  - `Fig 4 - edge concordance.pdf`: Figure 4 from Smith (forthcoming).
+  - `Fig 3 - CID vs support.pdf`: Figure 3 from Smith (forthcoming).
 
 - `90_byChar.R`: Characterwise character concordance statistics.
   Outputs:
-  - `Fig 3 - character concordance.pdf`: Figure 3 from Smith (forthcoming).
+  - `Fig 5 - character concordance.pdf`: Figure 5 from Smith (forthcoming).
 
 
 ## References
