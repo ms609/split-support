@@ -68,9 +68,9 @@ qConcord <- vapply(
         stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
       }
     } else {
-      # Pinned to the naive quartet currency, matching Fig. 4's `wQuartet`:
-      # TreeSearch now defaults to unit = "nrqs", chanceCorrect = TRUE, which
-      # would silently redefine the values held in the `_chrQ` caches.
+      # Pinned to the naive quartet currency, matching Fig. 4's `wQuartet`.
+      # TreeSearch defaults to unit = "nrqs", chanceCorrect = TRUE, which is a
+      # different measure from the one the `_chrQ` caches hold.
       conc <- QuartetConcordance(refSplits, dataset, return = "char",
                                  unit = "quartet", chanceCorrect = FALSE)
       write(conc, concCache)
@@ -159,7 +159,7 @@ CIPlot <- function(x, calcTau = FALSE) {
   # No NRQS panel here: with `return = "char"` the NRQS currency averages over
   # every split, so it has no ceiling of 1 and is not comparable with the
   # clustering concordance panel beside it (which is a whole-tree quantity).
-  # The NRQS results are reported per edge, in Figs 2 and A1.
+  # The NRQS results are reported per edge, in Figs 3 and 4.
   pdf("Fig 5 - character concordance.pdf", 8.4, 2.4)
   par(
     mfrow = c(1, 6),

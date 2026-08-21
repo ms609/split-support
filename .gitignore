@@ -69,7 +69,6 @@ data-raw/nid/
 # Figures: reproduced in the published paper, not distributed here
 /*.pdf
 /*.svg
-!/Figure - tree.svg
 
 # Standalone side-analyses, not part of the published study
 /trit-analysis/

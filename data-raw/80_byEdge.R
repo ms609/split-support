@@ -25,11 +25,11 @@ iqStatList <- vector("list", nAln)
 tntStats <- c("symFq", "symGC", "boot", "jak", "pois")
 iqStats <- c("alrt", "lbp", "abayes", "ufb", "sCF") # .iqtree output file gives order
 
-# The two quartet measures reported in this study.  TreeSearch's defaults are
-# now unit = "nrqs", chanceCorrect = TRUE, so every call pins all three
-# arguments: a bare QuartetConcordance() would silently redefine the cached
-# columns, and the cache guards below check only column names, not their
-# meaning.
+# The two quartet measures reported in this study.  Every call pins `weight`,
+# `unit` and `chanceCorrect`: TreeSearch defaults to unit = "nrqs",
+# chanceCorrect = TRUE, so a bare QuartetConcordance() would return a
+# different measure from the one the caches hold, and the cache guard below
+# checks column names, not their meaning.
 NaiveQC <- function(partitions, dataset, weight = TRUE) {
   QuartetConcordance(partitions, dataset, weight = weight,
                      unit = "quartet", chanceCorrect = FALSE)
@@ -180,22 +180,6 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
       file.remove(ConcFile(sim, aln))
       stop("Dimension mismatch; is concordance cache ", aln, " out of date?")
     }
-    if (!"wQuartet" %in% colnames(conc)) {
-      conc <- cbind(quartet = NaiveQC(partitions, dataset, weight = FALSE),
-                    wQuartet = conc[, 1],
-
-                    conc[, -1]
-                    )
-      write.table(conc, concCache)
-    } else if (any(is.na(conc[, "quartet"]))) {
-        conc[, "quartet"] <- NaiveQC(partitions, dataset, weight = FALSE)
-        write.table(conc, concCache)
-    }
-    # Separate check, not an `else if`: a cache may need both migrations.
-    if (!"wNrqs" %in% colnames(conc)) {
-      conc <- cbind(conc, wNrqs = NrqsQC(partitions, dataset))
-      write.table(conc, concCache)
-    }
   } else {
     # For efficiency, calculate the complete concordance statistics once and
     # derive the associated measures below.
@@ -223,8 +207,6 @@ for (i in cli::cli_progress_along(seq_len(nAln), "Analysing")) {
         rowSums(cAll["mi", , ]) / bestSums,
         rowSums(cAll["miRand", , ]) / bestSums
       ), # = ClustConc(partitions, dataset, chanceCorrect = TRUE)
-      # Appended last so that migrated and freshly written caches agree on
-      # column order; all downstream access is by name in any case.
       wNrqs = NrqsQC(partitions, dataset)
     )
     write.table(conc, concCache)
@@ -323,13 +305,9 @@ dat <- data.frame(occurs = partCorrect, partQual, postProb, concord, hereFor) |>
 
 # Compute Somers' D, from which the C-index may be derived
 SomersD <- function(score, target) {
-  # survival::concordance() computes the same statistic as the
-  # Hmisc::rcorr.cens() call this replaced -- verified identical to the last
-  # digit on continuous, integer-valued, heavily tied and negative-valued
-  # predictors against a partQual-shaped target -- but with an O(n log n)
-  # balanced tree in place of rcorr.cens()'s O(n^2) double loop.  At
-  # n = 354 638 that is 2 s against 19 min, and this function is called 51
-  # times by the appendix figure alone.
+  # survival::concordance() ranks with an O(n log n) balanced tree, taking 2 s
+  # at n = 354 638.  Fig 3 calls this 51 times, six of them at full size, so a
+  # quadratic ranker costs hours per run.
   fit <- survival::concordance(target ~ score)
 
   # C index = (Dxy + 1) / 2, so Dxy = 2C - 1 and se(Dxy) = 2 se(C).
@@ -374,8 +352,8 @@ CIndex <- function(score, target) {
 # mean equal values across the two rows, and the legend must show both bars.
 cIndexRange <- c(0.5, 0.9)
 aucRange <- c(0.5, 1)
-# Absolute character expansion wanted for the annotation: 0.5 of a 12 pt base,
-# i.e. 6 pt, as the `mtext()` call this replaced produced.
+# Absolute character expansion for the annotation: 0.5 of a 12 pt base, i.e.
+# 6 pt.
 chipCex <- 0.5
 chipRamp <- viridisLite::cividis(256)
 
@@ -540,7 +518,7 @@ ChipLegend <- function() {
 # which `ChipFill()` would otherwise clamp silently to the end of the ramp.
 nidCtbiRange <- c(0.5, 0.95)
 nidCtbi1Range <- c(0.3, 0.7)
-nidChipCex <- 0.78 # as the plain-text annotation this replaced used
+nidChipCex <- 0.78
 
 # Three chipped rows down the top-right corner of a Fig 3 panel
 .NidChips <- function(cIndex, ctbi, ctbi1) {
@@ -677,10 +655,8 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
   if (file.exists(cacheFile)) {
     load(cacheFile)
     haveRoc <- TRUE
-    # Caches written before the standard-error fix hold a `ci95` that is
-    # sqrt(n) too narrow, and carry no `se` element.  Recompute those: it costs
-    # seconds now that SomersD() is O(n log n), and leaving wrong intervals in
-    # a cache is a trap.
+    # A cached `cIdx` is usable only if it carries an `se`: one without it also
+    # holds a `ci95` that is too narrow to plot.
     haveCIdx <- !is.null(cIdx$se)
   }
   if (!haveCIdx) {
@@ -757,7 +733,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 }
 
 # ============================================================
-# Fig 3: NID vs. support metrics (referee request)
+# Fig 3: NID vs. support metrics
 #
 # Plots the normalized clustering information distance (NID)
 # between each inferred edge and the reference tree (x-axis)
@@ -769,7 +745,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 # ============================================================
 
 # Metrics in the same order as Fig. 4 (unique, first appearance)
-.fig_a1_metrics <- list(
+.nidMetrics <- list(
   list(values = allDat$cluster,      name = "Clustering concordance"),
   list(values = allDat$clusterNorm,  name = "Adjusted clustering conc."),
   list(values = allDat$mutual,       name = "Mutual clustering concordance"),
@@ -810,7 +786,7 @@ nidCacheVersion <- 1L
 # Two metrics whose names differed only in punctuation would silently share a
 # cache file, and the version guard would not notice.
 stopifnot(!anyDuplicated(
-  vapply(.fig_a1_metrics, function(m) .NidCacheFile(m$name), "")
+  vapply(.nidMetrics, function(m) .NidCacheFile(m$name), "")
 ))
 
 .NidCache <- function(name, Compute) {
@@ -903,7 +879,7 @@ par(mar      = c(2.5, 2.5, 2, 0.5),
     tcl       = -0.3,
     mgp       = c(2, 0.4, 0))
 
-for (.m in .fig_a1_metrics) .NidPanel(.m$values, .m$name)
+for (.m in .nidMetrics) .NidPanel(.m$values, .m$name)
 
 # Shared axis labels
 mtext("Edge support value",

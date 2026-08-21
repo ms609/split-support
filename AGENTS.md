@@ -16,20 +16,33 @@ split-support/
 │   ├── 20_MrBayes*.R             # Bayesian inference (local + HPC variants)
 │   ├── 30_iqtree.R               # Maximum-likelihood inference (IQ-TREE)
 │   ├── 40_tnt.R                  # Parsimony inference (TNT)
-│   ├── 80_byEdge.R               # Edge-wise analysis → Fig 4, Fig 3
+│   ├── 80_byEdge.R               # Edge-wise analysis → Fig 3, Fig 4
 │   ├── 90_byChar.R               # Character-wise analysis → Fig 5
+│   ├── Figure_tree.R             # Reference topology → Fig 2
 │   ├── reference-gam.tre         # True reference tree (48 tips)
+│   ├── mb-gam.nex                # MrBayes block (brlenspr rate 0.245568)
+│   ├── tnt-ew.run, bremer.run    # TNT scripts: search, support, Bremer
+│   ├── slurm.sh                  # SLURM template for the HPC route
 │   ├── alignments/               # 1 000 simulated NEXUS alignments
 │   ├── MrBayes/                  # Bayesian results
-│   ├── iqtree/                   # IQ-TREE results
 │   ├── tnt/                      # TNT results
+│   ├── iqtree/                   # IQ-TREE results (incl. `.cf.tree` sCF trees)
 │   ├── concordance/              # Cached ClusteringConcordance results
 │   ├── entropy/                  # Cached ClusteringEntropy results
 │   ├── roc/                      # Cached per-panel roc + cIdx for Fig 4
 │   └── nid/                      # Cached per-metric C-indices + GAM curves
 │                                 #   for Fig 3 (see `nidCacheVersion`)
+├── .zenodo.json                  # Metadata for the Zenodo deposit
+├── README.md
 └── AGENTS.md
 ```
+
+`roc/` and `nid/` are **not under version control**: they hold derived results
+that the figure scripts rebuild on demand, and `roc/` alone ran to 200 MB.
+`_config.R` creates both, so a fresh clone works without them.
+No figure is kept in the repository — each script writes its own, and all five
+appear in the published paper. `trit-analysis/`, a standalone side-study that
+feeds no published figure, is ignored too.
 
 ## Simulation Parameters (_config.R)
 
@@ -43,13 +56,20 @@ split-support/
 
 ### File-naming helpers (from `_config.R`)
 
-- `DataFile(sim, aln)` → NEXUS alignment path
-- `MBFile(sim, aln, ext)` → MrBayes output path
-- `IQFile(sim, aln, ext)` → IQ-TREE output path
-- `TNTFile(sim, aln, type)` → TNT output path
-- `ConcFile(sim, aln)` → concordance cache path
-- `EntropyFile(sim, aln)` → entropy cache path
-- `PartQFile(sim, aln)` → partition quality cache path
+- `DataFile(sim, id, ext = ".nex")` → NEXUS alignment path
+- `MBFile(sim, id = "", suffix = NULL)` → MrBayes output path
+- `IQFile(sim, id, suffix = "")` → IQ-TREE output path
+- `TNTFile(sim, id, wt = "ew")` → TNT output path
+- `ConcFile(sim, id, suffix = "")` → concordance cache path; `90_byChar.R`
+  passes `"_chr"`, `"_chrQ"` and `"_cns"` for its per-character caches
+- `EntropyFile(sim, id)` → entropy cache path
+- `PartQFile(sim, id)` → partition quality cache path
+
+Directory constants: `alnDir`, `mbDir`, `iqDir`, `tntDir`, `concDir`, `hDir`,
+`rocDir`, `nidDir`. **`tntDir` is `data-raw/tnt/`, lower case.** The case must
+match the directory that ships with the repository: on a case-sensitive
+filesystem a mismatch yields an empty directory, and every replicate is then
+skipped for want of TNT results.
 
 ## Session Variables (populated by 80_byEdge.R)
 
@@ -60,10 +80,10 @@ split-support/
 | `postProb` | numeric vector | MrBayes posterior probabilities |
 | `concord` | matrix | Concordance metrics: `quartet`, `wQuartet`, `cluster`, `phylo`, `mutual`, `shared`, `clusterNorm`, `wNrqs` |
 | `tntStat` | matrix | TNT support: `symFq`, `symGC`, `boot`, `jak`, `pois` |
-| `iqStat` | matrix | IQ-TREE support: `alrt`, `lbp`, `abayes`, `ufb` |
+| `iqStat` | matrix | IQ-TREE support: `alrt`, `lbp`, `abayes`, `ufb`, `sCF` |
 | `bremer` | numeric vector | Bremer (decay) support from TNT |
 | `splitH` | matrix | Clustering entropy per partition |
-| `allDat` | data.frame | All of the above combined (354 638 rows × 19 cols); includes NAs for method-specific metrics |
+| `allDat` | data.frame | All of the above combined (354 638 rows × 23 cols); includes NAs for method-specific metrics |
 | `dat` | data.frame | `allDat` filtered to rows with no NAs in concordance + postProb columns |
 | `refSplits` | Splits | Splits of the reference tree |
 | `referenceTree` | phylo | The true 48-tip reference tree |
@@ -100,9 +120,8 @@ inside the `# --- support chips:` block). Conventions:
   in panel order (AUC, then C-index), under a short "better →" arrow.
 - Geometry is computed in **inches** (`grconvertX/Y`) so corner radii stay
   isotropic under each panel's user coordinates. `ChipCex()` divides out the
-  `par("cex") = 0.66` that `layout()` imposes, because `text()` scales `cex` by
-  it whereas the `mtext()` call this replaced did not — without that the
-  annotation would render at 4 pt rather than 6 pt.
+  `par("cex") = 0.66` that `layout()` imposes: `text()` multiplies its `cex` by
+  it, so without that division the annotation renders at 4 pt rather than 6 pt.
 - Panel titles are drawn by `SupportAnnotation()` at `line = 2.6`, *not* by
   `spineplot(main =)`, whose default placement leaves no room for the chips.
 - **Both rows carry a 95% interval** at 3 dp, via `Bounds()`: `AUC = 0.79
@@ -116,32 +135,35 @@ inside the `# --- support chips:` block). Conventions:
   `scratchpad/chip_mock.R`. `ChipLegend()` still spells out "C-index".
   Fig 3 deliberately shows **no** intervals — its panels have no room.
 
-**Fig 4 metric order** (unique, first appearance — also used for Fig 3):
+**Fig 4 metric order** (unique, first appearance — 16 metrics over 24 panels,
+since the four concordance measures repeat in each method group):
 `cluster`, `mutual`, `wNrqs`, `wQuartet`, `postProb`, `ufb`, `lbp`, `abayes`,
 `alrt`, `sCF`, `jak`, `boot`, `symFq`, `symGC`, `pois`, `bremer`
 
+Fig 3 follows the same order over one panel each, plus `clusterNorm` in second
+place: 17 panels.
+
 Exactly **two** quartet measures are plotted, both weighted, so that the
 contrast is single-axis: `wNrqs` (non-redundant quartet statements,
-chance-corrected — the new package default) comes **first**, ahead of
-`wQuartet` (naive quartet currency, uncorrected — the old package default).
-The unweighted `quartet` column is still computed and cached, but no longer
-plotted. IQ-TREE's own `sCF` is retained as an independent measure, not as a
-third variant of these.
+chance-corrected) comes **first**, ahead of `wQuartet` (naive quartet currency,
+uncorrected). The unweighted `quartet` column is computed and cached but not
+plotted. IQ-TREE's own `sCF` is an independent measure, not a third variant of
+these.
 
-### Fig 3 — NID vs. support scatter (referee request)
+### Fig 3 — NID vs. support scatter
 Function `.NidPanel(values, name)` plots NID (x) against a support metric (y).
 Points are coloured by which methods carry data for the edge (`hereFor`); the
 two trend lines are GAM fits, over `common` edges and over all edges with data.
 Three C-indices are chipped in each panel — no intervals, for want of space.
 Layout: 6 rows × 3 cols, 17 metric panels + 1 legend slot. Output:
-`Fig 3 - CID vs support.pdf` (7 × 9 in). The stale `Fig A1 - NID vs
-support.pdf` in the repo root predates the renumbering; nothing writes it.
+`Fig 3 - CID vs support.pdf` (7 × 9 in). The panels are driven by
+`.nidMetrics`.
 
 **Support chips** (`.NidChips()`, same machinery as Fig 4 — `ChipRow()`,
 `ChipFill()`, `ChipInk()`, `RoundRect()`). Three chipped rows down the
-top-right corner *inside* each panel, replacing the plain `text()` annotations;
-`nidChipCex = 0.78`, matching what that text used. Each of the three C-indices
-gets its own bounds on the shared cividis ramp, all anchored on 0.5:
+top-right corner *inside* each panel;
+`nidChipCex = 0.78`. Each of the three C-indices gets its own bounds on the
+shared cividis ramp, all anchored on 0.5:
 
 | Row | Subset | Domain | Observed |
 |-----|--------|--------|----------|
@@ -149,8 +171,12 @@ gets its own bounds on the shared cividis ramp, all anchored on 0.5:
 | `C_CTBI` | `common` edges only | `nidCtbiRange` = 0.5–0.95 | 0.56–0.93 |
 | `C_CTBI'` | `common & !partCorrect` | `nidCtbi1Range` = 0.3–0.7 | 0.38–0.67 |
 
-- The C-index row shares Fig 4's domain **deliberately**, so a chip means the
-  same thing in both figures.
+- The C-index row shares Fig 4's **domain**, but not its **subset**, so a chip
+  does *not* always mean the same thing in both figures. Fig 4's `tntCF` group
+  requires all five TNT statistics to be non-NA (n = 36 761); this figure's `ok`
+  requires only the plotted metric. The six TNT metrics differ between the two
+  by up to 0.0230 (`symFq` 0.8335 here vs 0.8565 in Fig 4) — 2.7× the widest 95%
+  half-width. All ten non-TNT metrics agree to 1e-4.
 - `C_CTBI'` is the only one **symmetric** about 0.5, because it is the only one
   that goes below it (sCF = 0.38 — it ranks incorrect edges in the *wrong*
   order). Symmetry buys an absolute reading: mid-grey = uninformative, brighter
@@ -162,13 +188,13 @@ gets its own bounds on the shared cividis ramp, all anchored on 0.5:
   between runs; `.NidChips()` warns on any value outside its domain, which
   `ChipFill()` would otherwise clamp silently.
 - `ChipBar(labelSide = "left")` draws the three key bars into the legend slot
-  beneath the "Stats available" point key, whose `cex` dropped 1 → 0.9 to make
+  beneath the "Stats available" point key, which is set at `cex = 0.9` to leave
   room.
-- The chips are opaque and sit over the data, as the text they replaced did.
+- The chips are opaque and sit over the data.
 
-Values for the pre-chip version of this figure can be recovered from the text
-layer of the committed PDF (cairo writes literal strings), which is how the
-domains above were fixed without re-running the pipeline.
+The domains above can be checked against a rendered PDF without re-running the
+pipeline: cairo writes literal strings, so the printed values sit in the text
+layer.
 
 ## Concordance Metrics (TreeSearch package)
 
@@ -178,8 +204,8 @@ domains above were fixed without re-running the pipeline.
 | `mutual` | `MutualClusteringConcordance()` | Primary metric |
 | `wQuartet` | `QuartetConcordance(unit = "quartet", chanceCorrect = FALSE)` | Naive quartet currency |
 | `wNrqs` | `QuartetConcordance(unit = "nrqs", chanceCorrect = TRUE)` | May be negative |
-| `quartet` | as `wQuartet`, `weight = FALSE` | Cached; no longer plotted |
-| `clusterNorm` | `ClusteringConcordance(chanceCorrect = TRUE)` | Not used in study |
+| `quartet` | as `wQuartet`, `weight = FALSE` | Cached; not plotted |
+| `clusterNorm` | `ClusteringConcordance(chanceCorrect = TRUE)` | Fig 3 panel 2, "Adjusted clustering conc." |
 | `phylo` | `PhylogeneticConcordance()` | Not used in study |
 | `shared` | `SharedPhylogeneticConcordance()` | Not used in study |
 
@@ -187,25 +213,28 @@ domains above were fixed without re-running the pipeline.
 
 **R packages:** `TreeTools`, `TreeSearch`, `TreeDist`, `phangorn`, `ape`,
 `survival` (C-index via `concordance`), `mgcv`, `pROC`, `viridisLite` (support
-chips). **`Hmisc` is no longer used** — see the C-index note below.
+chips), `cli` (progress bars); `ssh` for the HPC scripts only.
 
-**External software:** TNT, MrBayes 3.2.7, IQ-TREE 3.0.1
+**External software:** TNT, MrBayes 3.2.7, IQ-TREE 3.0.1. R ≥ 4.1, for `|>`.
+
+**TreeSearch is not installable from any release.** `unit` and `chanceCorrect`
+exist in no commit on `ms609/TreeSearch`; they live on
+`agent-issues/TreeSearch`, branch `claude/frac-quart-weight-agreement-5f418a`
+(PR #183, base `cpp-search`), which is the tree the caches were computed
+against. Until that lands, install from that branch — a build from `main` or
+`cpp-search` reverts the API and `NrqsQC()` errors out.
 
 ## The C-index (`SomersD` / `CIndex` in 80_byEdge.R)
 
-Computed with **`survival::concordance()`**, not `Hmisc::rcorr.cens()`.
+Computed with **`survival::concordance()`**, whose O(n log n) balanced tree
+takes 2 s at n = 354 638. Fig 3 needs 51 C-indices, six of them at full size, so
+a quadratic ranker costs hours per run — do not substitute one.
 
-- **Why.** `rcorr.cens` is O(n²) (measured exponent 2.00): 19 min at
-  n = 354 638. `.NidPanel()` needs 51 C-indices, six of them at full size, so
-  Fig 3 alone took ~2 h per run. `survival::concordance()` uses an
-  O(n log n) balanced tree — 2 s at the same n — and returns the identical
-  statistic (verified to ≤1e-8 on continuous, integer-valued, heavily tied and
-  negative-valued predictors against a `partQual`-shaped target).
-- **Standard errors were wrong until 2026-08-05.** `rcorr.cens`'s `"S.D."` is
-  already the standard *error* of Dxy; the old code divided it by `sqrt(n)`
-  again, understating every interval by a factor of √n (595× at full n). The
-  `ci95` element was never plotted, so no figure was affected, but **any C-index
-  CI quoted in the manuscript from before this date is wrong.** Correct values:
+- `SomersD()` takes the standard *error* of Dxy directly from
+  `sqrt(fit$var)`, the infinitesimal-jackknife variance. It is already an error,
+  not a standard deviation: dividing by `sqrt(n)` would understate every
+  interval by a factor of √n (595× at full sample size).
+- Intervals by panel group:
 
   | Panel group | *n* | SE | 95% half-width |
   |---|---|---|---|
@@ -219,21 +248,22 @@ Computed with **`survival::concordance()`**, not `Hmisc::rcorr.cens()`.
   which has no room for them, omits them entirely.
 - `CIndex()` returns `estimate`, `ci95` **and `se`**. Do not `lapply` over it:
   `se` takes the scale change from Dxy to C but not the location shift.
-- The `roc/` cache guard treats a stored `cIdx` with no `se` element as stale
-  and rewrites it, so pre-fix caches heal themselves on the next run.
 
 ## Notes
 
 - Concordance results are cached in `concordance/` and `entropy/` to avoid
-  recomputation; delete cache files if partitions change.
+  recomputation; delete cache files if partitions change. These two are
+  distributed with the repository — a full rebuild is ~8 h. `roc/` and `nid/`
+  are not, and rebuild on demand.
+- `90_byChar.R` writes three per-character caches, distinguished by the
+  `ConcFile()` suffix: `_chr`, `_chrQ` and `_cns`.
 - `data-raw/nid/` caches each Fig 3 metric's three C-indices *and* its two GAM
   prediction curves. The guard checks `nidCacheVersion` and nothing else, so
   **bump that constant** after any change to the GAM family, `gamma`, the
   spline basis, the subsets the C-indices use, or the meaning of a metric
   column. A second run of the figure then costs seconds, not hours.
 - **Never call `QuartetConcordance()` or `ClusteringConcordance()` without
-  pinning `unit` and `chanceCorrect`.** TreeSearch ≥ 2.0.0 renamed `normalize`
-  to `chanceCorrect`, added `unit`, and defaults to
+  pinning `unit` and `chanceCorrect`.** TreeSearch defaults to
   `unit = "nrqs", chanceCorrect = TRUE`. A bare call therefore returns a
   *different measure* from the one the caches hold, and the cache guards in
   `80_byEdge.R` check only column names, never their meaning. Use the
@@ -244,3 +274,31 @@ Computed with **`survival::concordance()`**, not `Hmisc::rcorr.cens()`.
   (~37–45k rows); use this for fair cross-method comparisons.
 - Systematic Biology figure guidelines require `frame.plot = FALSE` in base R
   plots (no surrounding box).
+- **999, not 1 000, replicates reach the edge-wise analyses.** `gam0615` has no
+  TNT output, and `80_byEdge.R` `next`s past any replicate that lacks one.
+  `gam0011` has no MrBayes consensus tree, which nothing reads. A full re-run of
+  the inference would fill both gaps and shift every statistic slightly.
+- Site concordance factors come from the `.cf.tree` files, which ship with the
+  repository. `80_byEdge.R` regenerates a missing one by calling the IQ-TREE
+  executable named in the **`iqtree.exe` environment variable** — not `iqExec`
+  from `_config.R`. If it is unset, `system2("")` fails quietly and the script
+  then errors on the absent file.
+- **Only the simulation is seeded.** `10_simulate.R` sets `set.seed(1984)`,
+  IQ-TREE takes `-seed 1`, and Fig 3's scatter subsample uses `set.seed(4917)`.
+  `mb-gam.nex` sets no MrBayes seed, `tnt-ew.run` sets no `rseed`, and
+  `Consistency(nRelabel = 1000)` in `90_byChar.R` randomises with no seed at
+  all — so re-running those steps reproduces the study's findings, not its
+  digits. The distributed inference output and caches are the published record.
+- **Fig 5 rests on a selected subset.** 12.41% of `_chr.txt` values (11 910 /
+  96 000) are `NaN`: an invariant character gives `charInfo = charMax = 0` and
+  the `return = "char"` branch has no zero guard. `na.omit()` in `90_byChar.R`
+  drops them silently, and the loss is rate-correlated — 58.2% of characters in
+  the slowest gamma category against 0% in the two fastest — so the leftmost box
+  rests on ~42% of its characters, selected for being variable.
+- The alignments contain **no missing data** and reach at most **4 states** per
+  character; `nCats = 6` counts gamma rate categories, not states.
+- `90_byChar.R` writes with `pdf()` where `80_byEdge.R` uses `cairo_pdf()`, so
+  Fig 5 will not embed the Unicode the other figures rely on.
+- `.zenodo.json` supplies the deposit's title, author, ORCID and licence. It
+  carries no `related_identifiers` yet; add the article DOI as `isSupplementTo`
+  once it is issued.
