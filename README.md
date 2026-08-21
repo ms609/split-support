@@ -1,6 +1,8 @@
 # Clustering concordance - simulation evaluation
 
-This repository contains the simulation studies employed in Smith (forthcoming).
+This repository contains the simulation studies employed in Smith (2026),
+"Which characters support which clades? Exploring the distribution of phylogenetic signal using mutual information",
+_Systematic Biology_, in production.
 Analyses and analytical output are contained within the `data-raw` directory.
 
 
@@ -89,4 +91,4 @@ Calculation results are cached on first calculation in the `alignments`, `concor
 Goloboff, P.A., Farris, J.S., and Nixon, K.C. (2008) TNT, a free program for phylogenetic analysis. _Cladistics_ 24(5): 774--786. 
 doi:[10.1111/j.1096-0031.2008.00217.x](https://doi.org/10.1111/j.1096-0031.2008.00217.x)
 
-Smith, M.R. (forthcoming). Which characters support which clades? Exploring the distribution of phylogenetic signal using concordant information.
+Smith, M.R. (in production). Which characters support which clades? Exploring the distribution of phylogenetic signal using mutual information. _Systematic Biology_.
