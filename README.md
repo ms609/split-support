@@ -89,9 +89,8 @@ To reproduce the simulation workflow, execute the `.R` scripts in numerical sequ
 Scripts that process the outputs obtained above to compute and display statistics.
 Calculation results are cached on first calculation in the `concordance`,
 `entropy`, `roc` and `nid` subdirectories.
-The `concordance` and `entropy` caches are distributed with this repository, as
-they take around eight hours to compute; `roc` and `nid` hold cheaper derived
-results and are rebuilt on demand.
+The `concordance` and `entropy` caches are populated within this repository; to reduce
+download size, `roc` and `nid`, which are cheaper to compute, are rebuilt on demand.
 
 - `80_byEdge.R`: Edgewise character concordance statistics.
   Outputs:
