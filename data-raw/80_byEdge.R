@@ -668,7 +668,7 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
     cex = 0.8
   )
 
-  cacheFile <- file.path("data-raw", "roc", 
+  cacheFile <- file.path(rocDir,
                          gsub("[ ,\"\\[]|\\]", "",
                               paste(call[-1], collapse = "-")))
   message(cacheFile)
@@ -802,10 +802,9 @@ Histy <- function(var, breaks = 16, even = TRUE, cf = var) { # "Mosaic plot"
 # `gamma`, the spline basis, the subsets the C-indices use, or the meaning of a
 # metric column.  Deleting `data-raw/nid/` has the same effect.
 nidCacheVersion <- 1L
-dir.create(file.path("data-raw", "nid"), showWarnings = FALSE)
 
 .NidCacheFile <- function(name) {
-  file.path("data-raw", "nid", gsub("[^A-Za-z0-9]", "", name))
+  file.path(nidDir, gsub("[^A-Za-z0-9]", "", name))
 }
 
 # Two metrics whose names differed only in punctuation would silently share a
