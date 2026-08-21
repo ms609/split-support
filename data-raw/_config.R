@@ -57,8 +57,7 @@ CreateDir <- function(dir) {
   if (!dir.exists(dir)) dir.create(dir)
 }
 
-# Cache directories for the figure scripts.  These hold derived results only,
-# so they are not under version control and may be absent from a fresh clone.
+# Cache directories for the figure scripts
 CreateDir(rocDir)
 CreateDir(nidDir)
 
