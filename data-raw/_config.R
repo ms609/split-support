@@ -45,9 +45,6 @@ hpcServer <- Sys.getenv("sshLogin")
 ### Location of output files ###
 iqDir <- "data-raw/iqtree/"
 mbDir <- "data-raw/MrBayes/"
-# Case must match the directory that ships with the repository: on a
-# case-sensitive filesystem a mismatch silently yields an empty directory, and
-# every replicate is skipped for want of TNT results.
 tntDir <- "data-raw/tnt/"
 alnDir <- "data-raw/alignments/"
 concDir <- "data-raw/concordance/"
