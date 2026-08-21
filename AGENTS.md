@@ -1,14 +1,10 @@
-> **Before starting work in this directory, read [`../AGENTS.md`](../AGENTS.md)**
-> for multi-agent coordination rules, build/test infrastructure, GHA workflows,
-> and worktree discipline. That file is the authoritative reference for all
-> cross-package agent operations.
-
 # split-support: Agent Memory
 
 ## Project Overview
 
 R-based simulation study evaluating character concordance measures and split
-support metrics in phylogenetic inference. Accompanies the paper "Which characters support which clades? Exploring the distribution of phylogenetic signal using mutual information" (Smith, forthcoming, Systematic Biology).
+support metrics in phylogenetic inference. 
+Accompanies the paper "Which characters support which clades? Exploring the distribution of phylogenetic signal using mutual information" (Smith, in production, Systematic Biology).
 
 ## Directory Structure
 
