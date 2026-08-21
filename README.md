@@ -44,8 +44,7 @@ To reproduce the simulation workflow, execute the `.R` scripts in numerical sequ
 
   This script also prints the branch-length rate implied by the reference tree.
   If you change the tree size, copy the printed value into the
-  `prset brlenspr=unconstrained:uniform(0,<RATE>);` line of `mb-gam.nex`;
-  the committed value, 0.245568, corresponds to the reference tree distributed here.
+  `prset brlenspr=unconstrained:uniform(0,0.245568);` line of `mb-gam.nex`.
 
 
 ### Inference and support calculation
