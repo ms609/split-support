@@ -1,0 +1,26 @@
+{
+  "upload_type": "software",
+  "title": "split-support: simulation evaluation of character concordance and split support measures",
+  "creators": [
+    {
+      "name": "Smith, Martin R.",
+      "affiliation": "Durham University",
+      "orcid": "0000-0001-5660-1727"
+    }
+  ],
+  "description": "<p>Simulation study accompanying Smith (forthcoming), <em>Which characters support which clades? Exploring the distribution of phylogenetic signal using mutual information</em> (<em>Systematic Biology</em>).</p><p>One thousand alignments of 96 characters were simulated on a 48-leaf reference tree under a Jukes&ndash;Cantor model with six discrete gamma rate categories, and analysed under Bayesian inference (MrBayes), maximum likelihood (IQ-TREE) and parsimony (TNT). For every split recovered by any method, the repository records posterior probability, ultrafast bootstrap, SH-aLRT, local bootstrap probability, approximate Bayes, site concordance factor, symmetric resampling, bootstrap, jackknife, Poisson resampling and Bremer support, alongside clustering, mutual clustering and quartet concordance measures.</p><p>The archive contains the simulation, inference and analysis scripts, the simulated alignments, the inference output, and the cached concordance and entropy calculations, so that the published analyses and figures can be regenerated without repeating the inference.</p>",
+  "license": "GPL-3.0-or-later",
+  "access_right": "open",
+  "language": "eng",
+  "keywords": [
+    "phylogenetics",
+    "character concordance",
+    "split support",
+    "mutual information",
+    "clustering information",
+    "quartet concordance",
+    "simulation study",
+    "R"
+  ],
+  "notes": "Accompanies a manuscript accepted for publication in Systematic Biology. Once the article DOI is issued, add it to this file as a related identifier, for example: \"related_identifiers\": [{\"identifier\": \"10.1093/sysbio/XXXXXXX\", \"relation\": \"isSupplementTo\", \"resource_type\": \"publication-article\"}]"
+}

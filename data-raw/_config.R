@@ -45,15 +45,25 @@ hpcServer <- Sys.getenv("sshLogin")
 ### Location of output files ###
 iqDir <- "data-raw/iqtree/"
 mbDir <- "data-raw/MrBayes/"
-tntDir <- "data-raw/TNT/"
+# Lower case, matching the directory that ships with the repository: an
+# upper-case path resolves on Windows but creates an empty directory on any
+# case-sensitive filesystem, leaving every replicate without TNT results.
+tntDir <- "data-raw/tnt/"
 alnDir <- "data-raw/alignments/"
 concDir <- "data-raw/concordance/"
 hDir <- "data-raw/entropy/"
+rocDir <- "data-raw/roc/"
+nidDir <- "data-raw/nid/"
 
 # Set up directory structure
 CreateDir <- function(dir) {
   if (!dir.exists(dir)) dir.create(dir)
 }
+
+# Cache directories for the figure scripts.  These hold derived results only,
+# so they are not under version control and may be absent from a fresh clone.
+CreateDir(rocDir)
+CreateDir(nidDir)
 
 # Patterns to use when creating files
 CreateDir(concDir)
