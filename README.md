@@ -11,7 +11,8 @@ Analyses and analytical output are contained within the `data-raw` directory.
 - R 4.1 or later.
 - R packages: **TreeSearch 2.0**, TreeTools, TreeDist, phangorn, ape, survival,
   mgcv, pROC, viridisLite, cli.
-  * Until TreeSearch 2.0 reaches CRAN, install via `devtools::install_github("ms609/TreeSearch")`.
+  * Until TreeSearch 2.0 reaches CRAN, install it with
+    `pak::pkg_install("ms609/TreeSearch@cpp-search")`.
   The HPC scripts additionally require ssh.
 - To run the inference steps, local installations of
   [TNT](https://www.lillo.org.ar/phylogeny/tnt/),

@@ -212,17 +212,14 @@ layer.
 ## Key Dependencies
 
 **R packages:** `TreeTools`, `TreeSearch`, `TreeDist`, `phangorn`, `ape`,
-`survival` (C-index via `concordance`), `mgcv`, `pROC`, `viridisLite` (support
-chips), `cli` (progress bars); `ssh` for the HPC scripts only.
+`survival` (C-index via `concordance`), `mgcv`, `pROC`, `viridisLite`, `cli`;
+`ssh` for the HPC scripts only.
 
-**External software:** TNT, MrBayes 3.2.7, IQ-TREE 3.0.1. R ≥ 4.1, for `|>`.
+**External software:** TNT, MrBayes 3.2.7, IQ-TREE 3.0.1. R ≥ 4.1.
 
-**TreeSearch is not installable from any release.** `unit` and `chanceCorrect`
-exist in no commit on `ms609/TreeSearch`; they live on
-`agent-issues/TreeSearch`, branch `claude/frac-quart-weight-agreement-5f418a`
-(PR #183, base `cpp-search`), which is the tree the caches were computed
-against. Until that lands, install from that branch — a build from `main` or
-`cpp-search` reverts the API and `NrqsQC()` errors out.
+TreeSearch must be installed via `pak::pak("ms609/TreeSearch@cpp-search")` until
+v2.0.0 reaches CRAN.
+
 
 ## The C-index (`SomersD` / `CIndex` in 80_byEdge.R)
 
