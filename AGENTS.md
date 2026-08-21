@@ -212,7 +212,7 @@ layer.
 ## Key Dependencies
 
 **R packages:** `TreeTools`, `TreeSearch`, `TreeDist`, `phangorn`, `ape`,
-`survival` (C-index via `concordance`), `mgcv`, `pROC`, `viridisLite`, `cli`;
+`survival` (C-index via `concordance`), `mgcv`, `pROC`, `cli`;
 `ssh` for the HPC scripts only.
 
 **External software:** TNT, MrBayes 3.2.7, IQ-TREE 3.0.1. R ≥ 4.1.

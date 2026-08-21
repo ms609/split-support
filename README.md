@@ -10,7 +10,7 @@ Analyses and analytical output are contained within the `data-raw` directory.
 
 - R 4.1 or later.
 - R packages: **TreeSearch 2.0**, TreeTools, TreeDist, phangorn, ape, survival,
-  mgcv, pROC, viridisLite, cli.
+  mgcv, pROC, cli.
   * Until TreeSearch 2.0 reaches CRAN, install it with
     `pak::pkg_install("ms609/TreeSearch@cpp-search")`.
   The HPC scripts additionally require ssh.

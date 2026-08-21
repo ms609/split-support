@@ -355,7 +355,7 @@ aucRange <- c(0.5, 1)
 # Absolute character expansion for the annotation: 0.5 of a 12 pt base, i.e.
 # 6 pt.
 chipCex <- 0.5
-chipRamp <- viridisLite::cividis(256)
+chipRamp <- grDevices::hcl.colors(256, "Cividis")
 
 # `layout()` sets par("cex") to 0.66 for a grid this size, and text() /
 # strwidth() multiply their `cex` by it whereas mtext() did not.  Divide it out,
