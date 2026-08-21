@@ -8,26 +8,19 @@ Analyses and analytical output are contained within the `data-raw` directory.
 
 ## Requirements
 
-- R 4.1 or later (the scripts use the native `|>` pipe).
-- R packages: **TreeSearch**, TreeTools, TreeDist, phangorn, ape, survival,
+- R 4.1 or later.
+- R packages: **TreeSearch 2.0**, TreeTools, TreeDist, phangorn, ape, survival,
   mgcv, pROC, viridisLite, cli.
+  * Until TreeSearch 2.0 reaches CRAN, install via `devtools::install_github("ms609/TreeSearch")`.
   The HPC scripts additionally require ssh.
 - To run the inference steps, local installations of
   [TNT](https://www.lillo.org.ar/phylogeny/tnt/),
   [MrBayes](https://nbisweden.github.io/MrBayes/download.html) 3.2.7 and
   [IQ-TREE](https://iqtree.github.io/#download) 3.0.1.
-  These are not needed to re-run the analysis and figure scripts, which read the
-  inference output distributed with this repository.
+  The inference output required for analysis and figure generation is bundled within this repository.
 
-> TreeSearch must be recent enough for `QuartetConcordance()` to accept the
-> `unit` and `chanceCorrect` arguments, and for `ClusteringConcordance()` to
-> accept `chanceCorrect`; earlier versions spell the latter `normalize` and
-> compute a different measure.
->
-> Install with `devtools::install_github("ms609/TreeSearch")`.
 
-Run scripts from the repository root, not from within `data-raw`: the paths in
-`_config.R` are relative to the project directory.
+Run scripts from the repository root: the paths in `_config.R` are relative to the project directory.
 
 
 ## R scripts
