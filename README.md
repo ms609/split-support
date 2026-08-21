@@ -79,7 +79,6 @@ To reproduce the simulation workflow, execute the `.R` scripts in numerical sequ
   Outputs: 
   - `gam####.phy.splits.nex`: Split identifiers in NEXUS format, labelled with ultrafast bootstrap support values.
   - `gam####.phy.treefile`: Maximum likelihood tree with edge lengths, in Newick format; each node is labelled with SH-aLRT support (%) / local bootstrap support (%) / aBayes support / ultrafast bootstrap support (%).
-  - `gam####.phy.treefile.cf.tree`: Tree labelled with site concordance factors.
 
 - `40_tnt.R`: Conduct parsimony analysis in TNT.
   Inputs: 
@@ -104,6 +103,12 @@ results and are rebuilt on demand.
   Outputs:
   - `Fig 3 - CID vs support.pdf`: Figure 3 from Smith (forthcoming).
   - `Fig 4 - edge concordance.pdf`: Figure 4 from Smith (forthcoming).
+  - `iqtree/gam####.phy.treefile.cf.tree`: Tree labelled with site concordance
+    factors.
+    These are distributed with the repository.
+    Any that are missing are computed by calling IQ-TREE afresh, using the
+    executable named by the `iqtree.exe` environment variable
+    (`Sys.setenv(iqtree.exe = "/path/to/iqtree3")`).
 
 - `90_byChar.R`: Characterwise character concordance statistics.
   Outputs:
