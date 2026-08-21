@@ -92,10 +92,14 @@ Calculation results are cached on first calculation in the `concordance`,
 The `concordance` and `entropy` caches are populated within this repository; to reduce
 download size, `roc` and `nid`, which are cheaper to compute, are rebuilt on demand.
 
+- `Figure_tree.R`: Plots the reference topology.
+  Outputs:
+  - `Figure - tree.svg`: Figure 2 from Smith (in production).
+
 - `80_byEdge.R`: Edgewise character concordance statistics.
   Outputs:
-  - `Fig 3 - CID vs support.pdf`: Figure 3 from Smith (forthcoming).
-  - `Fig 4 - edge concordance.pdf`: Figure 4 from Smith (forthcoming).
+  - `Fig 3 - CID vs support.pdf`: Figure 3 from Smith (in production).
+  - `Fig 4 - edge concordance.pdf`: Figure 4 from Smith (in production).
   - `iqtree/gam####.phy.treefile.cf.tree`: Tree labelled with site concordance
     factors.
     These are distributed with the repository.
@@ -105,14 +109,7 @@ download size, `roc` and `nid`, which are cheaper to compute, are rebuilt on dem
 
 - `90_byChar.R`: Characterwise character concordance statistics.
   Outputs:
-  - `Fig 5 - character concordance.pdf`: Figure 5 from Smith (forthcoming).
-
-- `Figure_tree.R`: Plots the reference topology.
-  Outputs:
-  - `Figure - tree.svg`.
-
-Figures are not distributed with this repository; they are reproduced in the
-published paper.
+  - `Fig 5 - character concordance.pdf`: Figure 5 from Smith (in production).
 
 
 ## Reproducibility
@@ -137,7 +134,7 @@ which is why an HPC route is provided.
 
 ## Citation and licence
 
-Please cite Smith (forthcoming).
+Please cite Smith (in production).
 This repository is archived on Zenodo; `.zenodo.json` records the metadata for
 the deposit.
 Code is released under the GNU General Public Licence v3 or later (`LICENSE`).
