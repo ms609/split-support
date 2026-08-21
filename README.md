@@ -41,6 +41,8 @@ To reproduce the simulation workflow, execute the `.R` scripts in numerical sequ
   Outputs:
     - `reference-gam.tre`: Reference topology used for simulation, in newick format;
     - `alignments/gam####.nex`: Simulated alignment in NEXUS format; `####` denotes replicate ID.
+   1 000 replicates were simulated. One (`gam0615`) yielded no TNT output, so is excluded.
+
 
   This script also prints the branch-length rate implied by the reference tree.
   If you change the tree size, copy the printed value into the
@@ -110,34 +112,6 @@ download size, `roc` and `nid`, which are cheaper to compute, are rebuilt on dem
 - `90_byChar.R`: Characterwise character concordance statistics.
   Outputs:
   - `Fig 5 - character concordance.pdf`: Figure 5 from Smith (in production).
-
-
-## Reproducibility
-
-1 000 replicates were simulated. One (`gam0615`) yielded no TNT output, and is
-skipped by `80_byEdge.R`, so the edgewise analyses rest on 999 replicates.
-`gam0011` has no MrBayes consensus tree, which no analysis uses.
-
-The simulation itself is seeded (`set.seed(1984)`), as are the IQ-TREE analyses
-(`-seed 1`) and the subsampling used to draw Figure 3 (`set.seed(4917)`).
-The MrBayes and TNT analyses are not seeded, and
-`TreeSearch::Consistency(nRelabel = 1000)` in `90_byChar.R` randomises the
-character relabelling; re-running those steps therefore reproduces the findings
-of the study, but not its exact numbers.
-**The inference output and concordance caches distributed here are the record of
-the published analysis.**
-
-A complete re-run of the inference steps is a substantial undertaking: MrBayes
-alone runs up to five million generations for each of the 1 000 replicates,
-which is why an HPC route is provided.
-
-
-## Citation and licence
-
-Please cite Smith (in production).
-This repository is archived on Zenodo; `.zenodo.json` records the metadata for
-the deposit.
-Code is released under the GNU General Public Licence v3 or later (`LICENSE`).
 
 
 ## References
